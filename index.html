@@ -1,0 +1,3359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transaction Checklists — Sarah Chung TC</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 760px; margin: 0 auto; }
+
+    /* HEADER */
+    .header { margin-bottom: 1.5rem; }
+    .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .header h1 { font-size: 22px; font-weight: 500; }
+    .header p { font-size: 13px; color: #666; margin-top: 4px; }
+    .badge { font-size: 11px; color: #3B6D11; background: #EAF3DE; border: 0.5px solid #97C459; border-radius: 6px; padding: 4px 10px; white-space: nowrap; flex-shrink: 0; }
+
+    /* CARDS */
+    .card { background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+
+    /* BUTTONS */
+    .btn { height: 34px; padding: 0 14px; font-size: 13px; font-weight: 500; font-family: inherit; border-radius: 8px; cursor: pointer; border: 0.5px solid #c8c7c1; background: #fff; color: #1a1a1a; white-space: nowrap; transition: background 0.1s; display: inline-flex; align-items: center; gap: 5px; }
+    .btn:hover { background: #f0efe9; }
+    .btn.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    .btn.primary:hover { opacity: 0.85; }
+    .btn.danger { color: #A32D2D; border-color: #f09595; }
+    .btn.danger:hover { background: #FCEBEB; }
+    .btn.ghost { border-color: transparent; color: #888; }
+    .btn.ghost:hover { background: #f0efe9; color: #1a1a1a; border-color: #c8c7c1; }
+    .btn.sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+    .btn.gmail { background: #fff; color: #1a1a1a; border-color: #c8c7c1; }
+    .btn.gmail:hover { background: #f0efe9; }
+
+    /* FORM */
+    input, select, textarea { width: 100%; padding: 7px 10px; font-size: 14px; font-family: inherit; border: 0.5px solid #c8c7c1; border-radius: 8px; background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.15s; }
+    input, select { height: 34px; }
+    textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+    input:focus, select:focus, textarea:focus { border-color: #888; box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+    input::placeholder, textarea::placeholder { color: #aaa; }
+    label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+    .field-group { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 140px; }
+    .field-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+
+    /* NAV */
+    .nav-tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: #ededea; border-radius: 10px; padding: 3px; }
+    .nav-tab { flex: 1; padding: 7px 10px; border-radius: 8px; border: none; background: none; color: #666; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.1s; }
+    .nav-tab.active { background: #fff; color: #1a1a1a; border: 0.5px solid #dddcd6; }
+
+    /* TX MANAGER */
+    .tx-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .tx-select { flex: 1; min-width: 180px; }
+    .new-tx-form { margin-top: 1rem; padding-top: 1rem; border-top: 0.5px solid #ededea; display: none; }
+    .new-tx-form.open { display: block; }
+
+    /* PROGRESS */
+    .progress-wrap { flex: 1; }
+    .progress-meta { display: flex; justify-content: space-between; font-size: 13px; color: #666; margin-bottom: 5px; }
+    .progress-track { height: 6px; background: #e5e4e0; border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #1D9E75; border-radius: 999px; transition: width 0.3s; }
+
+    /* TOOLBAR */
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .tx-header { margin-bottom: 1rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .tx-title { font-size: 16px; font-weight: 500; }
+    .tx-subtitle { font-size: 13px; color: #888; margin-top: 2px; }
+
+    /* PHASES */
+    .phase-block { margin-bottom: 1.25rem; }
+    .phase-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .phase-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888; }
+    .phase-card { background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; overflow: hidden; }
+
+    /* TASK ROWS */
+    .task-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; border-bottom: 0.5px solid #ededea; transition: background 0.1s; }
+    .task-row:last-child { border-bottom: none; }
+    .task-row:hover { background: #f9f8f5; }
+    .cb { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; margin-top: 3px; border: 1.5px solid #c8c7c1; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .task-row.done .cb { background: #1D9E75; border-color: #1D9E75; }
+    .check-icon { display: none; color: #fff; font-size: 10px; font-weight: 700; }
+    .task-row.done .check-icon { display: block; }
+    .task-row.done .task-main { color: #bbb; text-decoration: line-through; }
+    .task-row.done .task-sub { color: #ccc; }
+    .task-content { flex: 1; min-width: 0; }
+    .task-main { font-size: 14px; color: #1a1a1a; line-height: 1.5; cursor: pointer; word-break: break-word; }
+    .task-sub { font-size: 12px; color: #888; margin-top: 2px; line-height: 1.4; word-break: break-word; }
+    .task-badge { font-size: 11px; color: #633806; background: #FAEEDA; border: 0.5px solid #EF9F27; border-radius: 6px; padding: 2px 7px; white-space: nowrap; flex-shrink: 0; margin-top: 3px; }
+    .task-actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity 0.1s; margin-top: 1px; }
+    .task-row:hover .task-actions { opacity: 1; }
+    .task-act-btn { width: 26px; height: 26px; border-radius: 6px; border: 0.5px solid #e0dfd9; background: #fff; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: #888; font-family: inherit; }
+    .task-act-btn:hover { background: #f0efe9; color: #1a1a1a; }
+    .task-act-btn.del:hover { background: #FCEBEB; color: #A32D2D; border-color: #f09595; }
+    .task-edit-form { padding: 10px 12px; border-bottom: 0.5px solid #ededea; background: #f9f8f5; display: none; }
+    .task-edit-form.open { display: block; }
+    .add-task-row { padding: 8px 12px; border-top: 0.5px solid #ededea; }
+
+    /* REMINDERS */
+    .reminder-banner { background: #FAEEDA; border: 0.5px solid #EF9F27; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #633806; margin-bottom: 1rem; line-height: 1.6; display: none; }
+    .reminder-banner.show { display: block; }
+    .reminder-item { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; }
+    .reminder-dot { width: 7px; height: 7px; border-radius: 50%; background: #BA7517; flex-shrink: 0; margin-top: 5px; }
+
+    /* DATES SECTION */
+    .dates-card { background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .dates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 0.75rem; }
+    .date-field { display: flex; flex-direction: column; gap: 3px; }
+    .date-field label { font-size: 12px; color: #666; }
+    .date-field input { height: 32px; font-size: 13px; }
+    .dates-title { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+
+    /* EMAILS VIEW */
+    .email-card { background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+    .email-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+    .email-card-title { font-size: 15px; font-weight: 500; }
+    .email-card-sub { font-size: 12px; color: #888; margin-top: 2px; }
+    .template-body { font-size: 13px; line-height: 1.7; color: #444; background: #f9f8f5; border: 0.5px solid #e5e4e0; border-radius: 8px; padding: 12px; white-space: pre-wrap; word-break: break-word; min-height: 80px; }
+    .template-vars { font-size: 11px; color: #888; margin-top: 6px; line-height: 1.6; }
+    .var-pill { display: inline-block; background: #E6F1FB; color: #0C447C; border: 0.5px solid #85B7EB; border-radius: 4px; padding: 1px 6px; font-size: 11px; margin: 2px 2px 0 0; }
+
+    /* RICH TEXT TOOLBAR */
+    .rte-toolbar { display: flex; gap: 4px; margin-bottom: 6px; }
+    .rte-btn { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid #c8c7c1; background: #fff; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; font-family: inherit; color: #1a1a1a; }
+    .rte-btn:hover { background: #f0efe9; }
+    .rte-btn.active { background: #1a1a1a; color: #fff; }
+    .rte-editor { min-height: 200px; font-size: 12px; line-height: 1.6; border: 0.5px solid #c8c7c1; border-radius: 8px; padding: 8px 10px; background: #fff; outline: none; overflow-y: auto; }
+    .rte-editor:focus { border-color: #888; box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+    .rte-note { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+    /* TEMPLATE EDITOR */
+    .tpl-phase { background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; margin-bottom: 1rem; overflow: hidden; }
+    .tpl-phase-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f9f8f5; border-bottom: 0.5px solid #ededea; }
+    .tpl-phase-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .tpl-task-row { display: flex; align-items: flex-start; gap: 8px; padding: 8px 14px; border-bottom: 0.5px solid #ededea; }
+    .tpl-task-row:last-child { border-bottom: none; }
+    .tpl-task-text { font-size: 13px; flex: 1; color: #1a1a1a; line-height: 1.4; }
+    .tpl-task-sub { font-size: 12px; color: #888; }
+    .tpl-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .tpl-edit-form { padding: 8px 14px; background: #f9f8f5; border-bottom: 0.5px solid #ededea; display: none; }
+    .tpl-edit-form.open { display: block; }
+    .tpl-add-row { padding: 8px 14px; background: #fafaf8; }
+    .btn-row { display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end; }
+
+    .info-banner { background: #E6F1FB; border: 0.5px solid #85B7EB; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #0C447C; margin-bottom: 1rem; line-height: 1.5; }
+    .success-banner { background: #E1F5EE; border: 0.5px solid #5DCAA5; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #085041; margin-bottom: 1rem; display: none; }
+
+    /* SPINNER */
+    .spinner { width: 14px; height: 14px; border: 2px solid #ddd; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #888; font-size: 14px; line-height: 1.7; }
+    .empty-state strong { display: block; font-size: 16px; font-weight: 500; color: #1a1a1a; margin-bottom: 6px; }
+    .footer { text-align: center; font-size: 12px; color: #aaa; margin-top: 2rem; padding-top: 1rem; border-top: 0.5px solid #e5e4e0; }
+
+    /* TOAST */
+    .toast { background:#1a1a1a; color:#fff; font-size:13px; padding:10px 16px; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); display:flex; align-items:center; gap:8px; animation: toast-in 0.2s ease-out; max-width:320px; }
+    .toast.success { background:#1D9E75; }
+    .toast.error { background:#A32D2D; }
+    @keyframes toast-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .toast.fade-out { animation: toast-out 0.2s ease-in forwards; }
+    @keyframes toast-out { to { opacity:0; transform:translateY(8px); } }
+
+    /* COLLAPSIBLE */
+    .collapse-body { transition: none; }
+    .collapse-body.hidden { display: none; }
+    .collapse-toggle { font-size:11px; color:#888; background:none; border:0.5px solid #dddcd6; border-radius:5px; padding:2px 8px; cursor:pointer; font-family:inherit; }
+    .collapse-toggle:hover { background:#f0efe9; }
+
+    /* DRAG TO REORDER */
+    .task-row.dragging { opacity: 0.4; }
+    .task-row.drag-over { border-top: 2px solid #1D9E75; }
+    .drag-handle { cursor: grab; color: #ccc; font-size: 14px; flex-shrink: 0; padding: 0 2px; user-select: none; }
+    .drag-handle:hover { color: #888; }
+
+    /* TASK REMINDER BADGE */
+    .task-rem-badge { font-size:10px; color:#854F0B; background:#FAEEDA; border:0.5px solid #EF9F27; border-radius:4px; padding:1px 5px; white-space:nowrap; flex-shrink:0; margin-top:3px; }
+
+    /* COMPLETED TASK AUTO-HIDE */
+    .task-row.hidden-completed { display: none; }
+    .sub-checks.hidden-completed { display: none; }
+
+    /* UNDO TOAST */
+    .toast.undo-toast { background: #1a1a1a; display: flex; align-items: center; gap: 10px; }
+    .toast.undo-toast .undo-btn { background: #fff; color: #1a1a1a; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+    .toast.undo-toast .undo-btn:hover { background: #ededea; }
+
+    /* COLLAPSED COMPLETED PHASE */
+    .phase-block.phase-collapsed .phase-card { display: none; }
+    .phase-complete-banner {
+      display: none; align-items: center; justify-content: space-between;
+      background: #E1F5EE; border: 0.5px solid #5DCAA5; border-radius: 12px;
+      padding: 10px 14px; cursor: pointer; font-size: 13px; color: #085041;
+    }
+    .phase-block.phase-collapsed .phase-complete-banner { display: flex; }
+    .phase-block.phase-collapsed .phase-header { display: none; }
+    .task-email-badge { font-size:10px; color:#0C447C; background:#E6F1FB; border:0.5px solid #85B7EB; border-radius:4px; padding:2px 7px; white-space:nowrap; flex-shrink:0; margin-top:1px; cursor:pointer; font-family:inherit; transition:background 0.1s; }
+    .task-email-badge:hover { background:#d4e8fa; }
+
+    /* SUB-CHECKS */
+    .sub-checks {
+      padding: 0 12px 8px 70px;
+      background: #fafaf8;
+      border-bottom: 0.5px solid #ededea;
+      position: relative;
+    }
+    .sub-checks::before {
+      content: '';
+      position: absolute;
+      left: 46px;
+      top: 0;
+      bottom: 10px;
+      width: 1.5px;
+      background: #dddcd6;
+      border-radius: 2px;
+    }
+    .sub-check-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 5px 0; border-bottom: 0.5px solid #f0efeb;
+      position: relative;
+    }
+    .sub-check-row::before {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 12px;
+      width: 16px;
+      height: 1.5px;
+      background: #dddcd6;
+    }
+    .sub-check-row:last-child { border-bottom: none; }
+    .sub-cb { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; border: 1.5px solid #c8c7c1; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .sub-check-row.sub-done .sub-cb { background: #1D9E75; border-color: #1D9E75; }
+    .sub-check-icon { display: none; color: #fff; font-size: 9px; font-weight: 700; }
+    .sub-check-row.sub-done .sub-check-icon { display: block; }
+    .sub-check-row.sub-done .sub-text { color: #bbb; text-decoration: line-through; }
+    .sub-text { font-size: 12px; color: #555; line-height: 1.4; flex: 1; cursor: pointer; }
+    .task-row.auto-done .task-main { color: #bbb; text-decoration: line-through; }
+    .task-row.auto-done .cb { background: #1D9E75; border-color: #1D9E75; pointer-events: none; }
+    .task-row.auto-done .check-icon { display: block; }
+
+    /* CUSTOM REMINDERS */
+    .rem-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+    .rem-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: #fff; border: 0.5px solid #dddcd6; border-radius: 10px; }
+    .rem-item.triggered { border-color: #EF9F27; background: #FAEEDA; }
+    .rem-item.triggered .rem-title { color: #633806; }
+    .rem-item.triggered .rem-meta { color: #854F0B; }
+    .rem-info { flex: 1; min-width: 0; }
+    .rem-title { font-size: 13px; font-weight: 500; color: #1a1a1a; line-height: 1.4; }
+    .rem-meta { font-size: 12px; color: #888; margin-top: 2px; }
+    .rem-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .card, .nav-tabs, .toolbar .btn, .task-actions, .add-task-row, .no-print, .reminder-banner, .dates-card { display: none !important; }
+      .phase-card { border: 1px solid #ddd; }
+      .task-row { break-inside: avoid; }
+      #view-checklist { display: block !important; }
+      .sub-checks { display: block !important; }
+    }
+    @media (max-width: 540px) {
+      .tx-row, .field-row { flex-direction: column; }
+      .dates-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="auth-screen" style="display:flex;min-height:100vh;align-items:center;justify-content:center;padding:1rem;">
+  <div style="max-width:380px;width:100%;">
+    <div style="text-align:center;margin-bottom:1.5rem;">
+      <h1 style="font-size:22px;font-weight:500;color:#1a1a1a;">Transaction Checklists</h1>
+      <p style="font-size:13px;color:#666;margin-top:4px;">Sarah Chung · DRE 01963579 · Compass</p>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem;">
+      <div id="auth-tabs" style="display:flex;gap:4px;margin-bottom:1.25rem;background:#ededea;border-radius:10px;padding:3px;">
+        <button class="nav-tab active" id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;">Log in</button>
+        <button class="nav-tab" id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;">Sign up</button>
+      </div>
+
+      <div id="auth-error" style="display:none;background:#FCEBEB;border:0.5px solid #f09595;color:#A32D2D;font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:1rem;"></div>
+      <div id="auth-info" style="display:none;background:#E6F1FB;border:0.5px solid #85B7EB;color:#0C447C;font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:1rem;"></div>
+
+      <div id="auth-form-fields" style="display:flex;flex-direction:column;gap:10px;">
+        <div class="field-group">
+          <label>Email</label>
+          <input type="email" id="auth-email" placeholder="you@compass.com" autocomplete="email" />
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input type="password" id="auth-password" placeholder="At least 6 characters" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()" />
+        </div>
+      </div>
+
+      <button class="btn primary" id="auth-submit-btn" onclick="submitAuth()" style="width:100%;margin-top:1.25rem;justify-content:center;">Log in</button>
+
+      <div id="auth-forgot-wrap" style="text-align:center;margin-top:0.75rem;">
+        <button class="btn ghost sm" onclick="sendPasswordReset()">Forgot password?</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:12px;color:#aaa;">Your data is private and only visible to your account.</div>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP (hidden until logged in) ===================== -->
+<div id="app-root" style="display:none;">
+<div id="confirm-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:1.5rem;max-width:380px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div id="confirm-modal-message" style="font-size:14px;color:#1a1a1a;line-height:1.6;margin-bottom:1.25rem;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn" id="confirm-modal-cancel" onclick="closeConfirmModal(false)">Cancel</button>
+      <button class="btn primary" id="confirm-modal-ok" onclick="closeConfirmModal(true)">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+<div class="container">
+
+  <div class="header">
+    <div class="header-top">
+      <div><h1>Transaction Checklists</h1><p>Sarah Chung, DRE 01963579, Compass, Los Angeles, CA</p></div>
+      <span class="badge">LA / CA workflow</span>
+      <button class="btn sm ghost" onclick="logOut()" title="Log out">Log out</button>
+      <span id="sync-status" style="font-size:11px;color:#aaa;align-self:center;"></span>
+    </div>
+  </div>
+
+  <!-- Hidden API key input (used by AI feature in Emails tab) -->
+  <input type="hidden" id="api-key" />
+  <input type="hidden" id="my-email" />
+
+  <!-- TX SELECTOR -->
+  <div class="card no-print">
+    <div class="tx-row">
+      <select class="tx-select" id="tx-select" onchange="loadTransaction(this.value)">
+        <option value="">— Select a transaction —</option>
+      </select>
+      <button class="btn primary" onclick="toggleNewForm()">+ New</button>
+      <button class="btn danger" id="delete-btn" style="display:none" onclick="deleteTransaction()">Delete</button>
+    </div>
+    <div class="new-tx-form" id="new-tx-form">
+      <div class="field-row" style="margin-top:0.75rem;">
+        <div class="field-group">
+          <label>Property address</label>
+          <input type="text" id="new-address" placeholder="123 Main St, Los Angeles" onkeydown="if(event.key==='Enter')createTransaction()" />
+        </div>
+        <div class="field-group">
+          <label>Client name(s)</label>
+          <input type="text" id="new-client" placeholder="Jane & John Smith" />
+        </div>
+      </div>
+      <div class="field-row" style="margin-top:8px;">
+        <div class="field-group" style="max-width:150px;">
+          <label>Type</label>
+          <select id="new-type"><option value="buyer">Buyer</option><option value="listing">Listing</option></select>
+        </div>
+        <div class="field-group">
+          <label>Agent</label>
+          <select id="new-agent"><option value="">— No agent assigned —</option></select>
+        </div>
+        <button class="btn primary" style="margin-top:18px;" onclick="createTransaction()">Create</button>
+        <button class="btn" style="margin-top:18px;" onclick="toggleNewForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REMINDER BANNER -->
+  <div class="reminder-banner" id="reminder-banner"></div>
+
+  <!-- NAV -->
+  <div class="nav-tabs no-print" id="main-nav">
+    <button class="nav-tab active" onclick="showView('checklist')">Checklist</button>
+    <button class="nav-tab" onclick="showView('notes')">Notes</button>
+    <button class="nav-tab" onclick="showView('emails')">Emails</button>
+    <button class="nav-tab" onclick="showView('template')">Edit template</button>
+    <button class="nav-tab" onclick="showView('reminders')">Reminders</button>
+    <button class="nav-tab" onclick="showView('settings')">Settings</button>
+  </div>
+
+  <!-- CHECKLIST VIEW -->
+  <div id="view-checklist">
+    <div class="empty-state" id="empty-state"><strong>No transaction selected</strong>Click "+ New" above to get started.</div>
+    <div id="checklist-content" style="display:none"></div>
+  </div>
+
+  <!-- EMAILS VIEW -->
+  <div id="view-emails" style="display:none">
+    <div id="emails-content"></div>
+  </div>
+
+  <!-- TEMPLATE EDITOR -->
+  <div id="view-template" style="display:none">
+    <div class="info-banner">Changes here update the master template and apply to all new transactions. Existing transactions are not affected.</div>
+    <div class="nav-tabs" style="margin-bottom:1rem;">
+      <button class="nav-tab active" id="tpl-buyer-tab" onclick="showTplTab('buyer')">Buyer phases</button>
+      <button class="nav-tab" id="tpl-listing-tab" onclick="showTplTab('listing')">Listing phases</button>
+    </div>
+    <div id="tpl-content"></div>
+    <div style="margin-top:0.75rem;font-size:12px;color:#888;">Changes save automatically as you edit. <button class="btn ghost sm" onclick="saveTemplate()" style="margin-left:4px;">Force save now</button></div>
+  </div>
+
+  <!-- REMINDERS VIEW -->
+  <div id="view-reminders" style="display:none">
+    <div id="reminders-content"></div>
+  </div>
+
+  <!-- NOTES VIEW -->
+  <div id="view-notes" style="display:none">
+    <div id="notes-content"></div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="view-settings" style="display:none">
+    <div id="settings-content"></div>
+  </div>
+
+  <div class="footer">Sarah Chung, Certified Transaction Coordinator, Compass, DRE 01963579, Los Angeles, CA</div>
+</div>
+
+<script>
+/* ── DEFAULTS ── */
+const DEFAULT_BUYER = [
+  { label: "Phase 1 — Contract Opening", tasks: [
+    { text: "Update Compass Business Tracker" },
+    { text: "Create transaction on Glide" },
+    { text: "Fill out offers in Business Tracker" },
+    { text: "Upload CMA and pre-approval letter in Glide" },
+    { text: "Upload documents in Business Tracker", sub: "Upload MLS sheet" },
+    { text: "Send intro emails to lender, escrow, and listing agent's team", sub: "Email listing agent - introduction\nEmail buyer - introduction\nEmail escrow + lender - introduction" },
+    { text: "Calendar all contingency dates and set reminders" },
+    { text: "Send intro email to buyer(s) with all important dates and contract info" },
+    { text: "Review with agent: key dates, contacts, milestones, and paperwork needed" },
+    { text: "Email buyer(s) wire instructions" },
+    { text: "Email listing agent and buyer(s) to coordinate inspections", sub: "Email listing agent - coordination\nEmail buyer - confirmation of inspections" },
+  ]},
+  { label: "Phase 2 — Disclosures & Reports", tasks: [
+    { text: "Email escrow for EI / CI / EMD confirmation", sub: "Escrow instructions\nCommission instructions\nEMD receipt" },
+    { text: "Email lender and buyer(s) for appraisal / insurance / HOA confirmation", sub: "Appraisal ordered\nEmail buyer - homeowner's insurance" },
+    { text: "Check if/then disclosure requirements", sub: "If in high fire hazard zone - FHDS required\nPre-1960 - earthquake hazards report required\nPre-1978 - LPD required\nSeller entity checked in RPA? RCSD-S required\nSolar panels on property?" },
+    { text: "Send NHD report and Prelim Title report to buyer(s) upon arrival", sub: "Go over documents if buyer(s) have questions" },
+    { text: "Send Homeowner's Guide to Earthquake Safety & Environmental Hazards booklet links to buyer(s)" },
+    { text: "Send AVID link via Glide for agent to fill out during inspections" },
+    { text: "Email escrow, listing agent, and buyer(s) re: disclosures and reports", sub: "Email buyers - reports\nEmail listing agent / escrow - follow up\nEmail title / escrow - questions re: prelim\nEmail HOA - questions re: docs" },
+    { text: "Send disclosures to buyer(s) for signatures", sub: "Go over disclosures if buyer(s) have questions" },
+    { text: "Send NHD report" },
+    { text: "Send Prelim Title report" },
+    { text: "Send all HOA documents and contact info (if applicable)", sub: "Provide breakdown of all HOA documents", badge: "if HOA" },
+    { text: "Send city report / 9A report" },
+    { text: "Email listing agent once buyer has signed disclosures" },
+  ]},
+  { label: "Phase 3 — Inspections & Contingencies", tasks: [
+    { text: "Notify buyer(s) of next steps once inspection reports are received" },
+    { text: "Confirm escrow has retrofit invoice and cert of compliance", sub: "Request 9A report from escrow", badge: "if applicable" },
+    { text: "Follow up with lender", sub: "Confirm appraisal ordered\nConfirm loan on track per contingency dates" },
+    { text: "Draft RR (Request for Repair) and send for signatures" },
+    { text: "Email buyer(s) and listing agent re: request for repairs", sub: "Email buyer - receipt of report + moving forward (canned)\nEmail listing agent - RR + inspection reports\nEmail buyer - seller's response to RR + CR\nEmail buyer - contingency removal email" },
+    { text: "Send RRRR for approval and signatures" },
+    { text: "Draft any necessary addendums", sub: "Send addendums to escrow and lender" },
+    { text: "Credits - draft ADM and send to escrow and lender", badge: "if applicable" },
+    { text: "Price reduction - update commission memo, draft ADM, send to escrow and lender", badge: "if applicable" },
+  ]},
+  { label: "Phase 4 — Active Escrow Monitoring", tasks: [
+    { text: "Follow up with escrow for updates" },
+    { text: "Send weekly updates to agent (if agent prefers)" },
+    { text: "Confirm all documents are fully executed" },
+    { text: "File audit - email listing agent / TC for missing documents", sub: "Email buyer - after all contingencies removed (canned)\nEmail listing agent - repairs check-in\nEmail escrow to confirm all buyer documents are in\nUpload documents in Business Tracker" },
+    { text: "Order home warranty", sub: "Send home warranty email to buyer(s)\nSend invoice to escrow\nUpload to Business Tracker" },
+    { text: "Fill out Commission Memo", sub: "Referral?\nAny credits to buyers?\nPrice reductions?\nAgent splits / Travis %?" },
+  ]},
+  { label: "Phase 5 — Closing Prep", tasks: [
+    { text: "Email escrow, lender, and buyer(s) re: moving forward with closing", sub: "Email buyer - moving forward with closing\nEmail buyer (cash) - moving forward with closing\nEmail escrow / lender - moving forward with closing" },
+    { text: "Schedule final walk-through with buyer(s)", sub: "Email buyer - schedule final walk-through\nEmail listing agent - final walk-through coordination\nSend VP\nConfirm staging is removed" },
+    { text: "Inform buyer(s) of closing logistics", sub: "Email listing agent - keys & utilities\nEmail buyer - keys & utilities" },
+    { text: "Coordinate key handoff" },
+    { text: "Email buyer(s) and listing agent - congratulations!", sub: "Email buyer - congratulations!\nEmail listing agent - congratulations!\nSend final documents to buyer via Google Drive" },
+    { text: "Email listing agent to change MLS status and remove photos" },
+    { text: "Email escrow for closing documents" },
+  ]},
+  { label: "Phase 6 — File Completion", tasks: [
+    { text: "Fill in Commission Memo in Business Tracker (Compass)" },
+    { text: "Store all transaction emails for compliance (agent's discretion)" },
+    { text: "Send Google Drive link with all documents to client(s)" },
+    { text: "Change CRM status on Compass", sub: "Change outreach interval to every 90 days\nUpdate client information" },
+    { text: "Send audited file and request a review" },
+  ]}
+];
+
+const DEFAULT_LISTING = [
+  { label: "Phase 1 — Pre-Listing & Offer Stage", tasks: [
+    { text: "Open file once RLA is received", sub: "Create Glide file\nInvite Compass Business Tracker\nUpload RLA to Business Tracker" },
+    { text: "Send intro emails to sellers via Glide", sub: "Email seller(s) introduction\nSend disclosures for sellers to fill out via Glide" },
+    { text: "Input listing documents into Business Tracker (Compass)" },
+    { text: "Send disclosures link to seller(s) to fill out via Glide", sub: "Include CMA\nInclude MLS sheet\nFill out SFLS" },
+    { text: "Schedule retrofit inspection (city of LA) for Cert of Compliance" },
+    { text: "Draft and send counter offers to agents as needed" },
+    { text: "Once offer received: send counter offer to buyer(s) and RPA to sellers for full execution" },
+  ]},
+  { label: "Phase 2 — Escrow Opening", tasks: [
+    { text: "Pre-escrow: email escrow and title", sub: "Order NHD report and email escrow with seller's contacts\nEmail title for prelim title report and property profile\nIf HOA - email escrow property management contact to order HOA docs\nCheck if city report is required (9A / cert of compliance)" },
+    { text: "Pre-open escrow", sub: "Notify escrow to order city reports\nNotify title for property profile and prelim title report\nProvide HOA contact info to escrow for HOA docs" },
+    { text: "Open escrow - send emails to all parties", sub: "Update Glide with dates\nSend open escrow email with all parties\nSet reminder dates for contingencies\nSend congratulations email to sellers\nSend intro email to buyer's agent/TC" },
+    { text: "Send intro emails to seller(s), buyer's agent, and lender", sub: "Include all important dates and contact information" },
+    { text: "Review with listing agent: key dates, contacts, milestones, and paperwork needed" },
+    { text: "Open file on Business Tracker", sub: "Upload offer and counters" },
+    { text: "Order NHD and any other applicable reports" },
+    { text: "Email escrow - confirm EMD received" },
+  ]},
+  { label: "Phase 3 — Disclosures & Inspections", tasks: [
+    { text: "Send seller disclosures to buyer's agent/TC", sub: "Listing agent AVID\nSend NHD report and prelim title report\nSend HOA docs (if any)\nSend link for environmental hazards booklet" },
+    { text: "Coordinate inspections with buyer's agent, listing agent, and seller(s)", sub: "Email sellers to confirm\nEmail agent/seller for access\nConfirm with buyer's agent" },
+    { text: "Order retrofit / city inspection (city of LA)", sub: "Pasadena - order city inspection via city website\nAzusa - order via Community Improvement Division" },
+    { text: "Email listing agent if appraiser has called" },
+    { text: "If HOA, contact escrow for status of HOA docs", sub: "Send HOA documents to buyer's agent directly", badge: "if HOA" },
+    { text: "Send all disclosures to buyer's agent and TC", sub: "Include all HOA docs (if applicable)", badge: "if HOA" },
+    { text: "Send Homeowner's Guide to Earthquake Safety & Environmental Hazards booklet links" },
+    { text: "Send all previous reports with RFR (Receipt for Reports) if needed" },
+  ]},
+  { label: "Phase 4 — Negotiations & Addendums", tasks: [
+    { text: "Inspection contingency - request for repairs or send notice to perform", sub: "Draft RRRR and send contingency removal\nIf credit or reduction - draft ADM and send to escrow" },
+    { text: "Check for appraisal contingency / loan contingency" },
+    { text: "Send all RR and/or RRRR to clients for review" },
+    { text: "Draft addendums and send for signatures", sub: "Send addendums to escrow and lender" },
+  ]},
+  { label: "Phase 5 — Active Escrow Monitoring", tasks: [
+    { text: "Follow up with escrow for updates and any incomplete documents" },
+    { text: "Follow up with lender to confirm loan is on track per contingency dates" },
+    { text: "Send weekly updates to agent (if agent prefers)" },
+    { text: "Fill out Commission Memo", sub: "Agent referral?\nAgent crediting seller?\nPrice reduction?\nSplit with agents / Travis %?" },
+    { text: "Audit file", sub: "Check in with escrow to confirm buyer documents are in\nEmail TC/agent for missing documents" },
+    { text: "Confirm all documents are fully executed" },
+    { text: "Place all documents in Business Tracker (Compass)" },
+    { text: "Order home warranty (if applicable)", badge: "if applicable" },
+  ]},
+  { label: "Phase 6 — Closing Prep", tasks: [
+    { text: "Schedule final walk-through", sub: "Schedule with agents\nEmail to confirm with buyer's agent\nConfirm staging is removed\nVerification of Property (VP) received?" },
+    { text: "Email escrow - check on loan docs" },
+    { text: "Email escrow re: closing funds", sub: "Buyer wired funds?\nLoan funded?" },
+    { text: "Coordinate final walk-through" },
+    { text: "Send reminder to remove sign, change MLS status to closed, and remove lockboxes" },
+    { text: "Email seller(s) - congratulations email" },
+  ]},
+  { label: "Phase 7 — File Completion", tasks: [
+    { text: "Submit file to Business Tracker (Compass)" },
+    { text: "Fill in Commission Memo in Business Tracker (Compass)" },
+    { text: "Store all transaction emails for compliance" },
+    { text: "Audit file and email seller file", sub: "Upload documents in Business Tracker files\nCreate Google Drive folder for clients\nEmail seller Google Drive folder" },
+    { text: "Send Google Drive link with all documents to client(s)" },
+  ]}
+];
+
+const DEFAULT_EMAIL_TEMPLATES = {
+  intro: {
+    title: "Intro email to all parties",
+    subject: "Welcome to Escrow — {{address}}",
+    body: `Hi everyone,
+
+I hope this message finds you well. My name is Sarah Chung and I will be serving as the Transaction Coordinator for this transaction.
+
+Property: {{address}}
+{{type_label}}: {{client}}
+Agent: {{agent}}
+{{other_label}}: {{other_agent}}
+Lender: {{lender}}
+Escrow Officer: {{escrow}}
+Purchase Price: {{price}}
+
+Key Dates:
+- Acceptance Date: {{acceptance}}
+- Inspection Contingency: {{inspection_date}}
+- Appraisal Contingency: {{appraisal_date}}
+- Loan Contingency: {{loan_date}}
+- Close of Escrow: {{coe}}
+
+Please do not hesitate to reach out with any questions. I look forward to working with everyone on this transaction.
+
+Best regards,
+Sarah Chung
+Certified Transaction Coordinator | Compass
+DRE 01963579`
+  },
+  contingency: {
+    title: "Contingency deadline reminder",
+    subject: "Reminder: {{contingency_name}} Deadline — {{address}}",
+    body: `Hi {{agent}},
+
+This is a friendly reminder that the {{contingency_name}} deadline for the following transaction is approaching:
+
+Property: {{address}}
+Deadline: {{contingency_date}}
+
+Please ensure all necessary paperwork is in order prior to this date.
+
+Best regards,
+Sarah Chung
+Certified Transaction Coordinator | Compass
+DRE 01963579`
+  },
+  weekly: {
+    title: "Weekly update to agent",
+    subject: "Weekly Transaction Update — {{address}}",
+    body: `Hi {{agent}},
+
+Here is your weekly update for {{address}}:
+
+Current Status:
+- Escrow is progressing as planned
+- All documents received to date are on file
+
+Upcoming Deadlines:
+{{upcoming_dates}}
+
+Please let me know if you have any questions or need anything from my end.
+
+Best regards,
+Sarah Chung
+Certified Transaction Coordinator | Compass
+DRE 01963579`
+  },
+  closing: {
+    title: "Closing logistics to client",
+    subject: "Closing Logistics — {{address}}",
+    body: `Hi {{client}},
+
+Congratulations! We are getting close to the finish line for {{address}}. Here are your closing logistics:
+
+Close of Escrow: {{coe}}
+
+Next Steps:
+- Final walk-through will be scheduled shortly
+- You will receive wire instructions from escrow — please verify directly with escrow before wiring any funds
+- Keys and access items (clickers, gate codes, etc.) will be confirmed with the listing agent
+
+Please do not hesitate to reach out with any questions as we approach closing.
+
+Best regards,
+Sarah Chung
+Certified Transaction Coordinator | Compass
+DRE 01963579`
+  }
+};
+
+/* ── REMINDER CONFIG ── */
+const REMINDER_KEYS = ['inspection','appraisal','loan','coe'];
+const REMINDER_LABELS = {
+  inspection: 'Inspection contingency',
+  appraisal:  'Appraisal contingency',
+  loan:       'Loan contingency',
+  coe:        'Close of escrow',
+};
+const DEFAULT_REMINDERS = { emd: [1], inspection: [0], appraisal: [7], loan: [1], insurance: [1], seller_disclosures: [1], coe: [7] };
+
+/* ── STATE ── */
+let transactions  = {};
+let template      = { buyer: deepClone(DEFAULT_BUYER), listing: deepClone(DEFAULT_LISTING) };
+let emailTemplates = deepClone(DEFAULT_EMAIL_TEMPLATES);
+let settings      = { apiKey: '', myEmail: '' };
+let globalReminders  = deepClone(DEFAULT_REMINDERS);
+let globalCustomRems = [];   // [{id, title, dateType, dateValue, daysBefore, note}]
+let agents = [];             // [{id, name}]
+let customContingencies = []; // [{id, label, defaultDaysBefore}]
+let currentTxId   = null;
+let currentView   = 'checklist';
+let currentTplTab = 'buyer';
+let editingEmailKey = null;
+// Persists collapsed state of UI sections across re-renders (in-memory only, resets on page reload)
+let sectionCollapsed = {};
+
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+
+/* ── CUSTOM CONFIRM MODAL (replaces native confirm() which can be silently blocked) ── */
+let _confirmResolve = null;
+function appConfirm(message) {
+  return new Promise((resolve) => {
+    _confirmResolve = resolve;
+    document.getElementById('confirm-modal-message').textContent = message;
+    document.getElementById('confirm-modal-overlay').style.display = 'flex';
+  });
+}
+function closeConfirmModal(result) {
+  document.getElementById('confirm-modal-overlay').style.display = 'none';
+  if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+}
+
+/* ── TOAST NOTIFICATIONS (replaces native alert() which can be silently blocked) ── */
+function showToast(message, type) {
+  type = type || 'default';
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (type !== 'default' ? ' ' + type : '');
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 200);
+  }, 3000);
+}
+
+/* ── COLLAPSE ── */
+function toggleSection(bodyId, toggleId) {
+  const body = document.getElementById(bodyId);
+  const btn  = document.getElementById(toggleId);
+  if (!body) return;
+  body.classList.toggle('hidden');
+  const isHidden = body.classList.contains('hidden');
+  sectionCollapsed[bodyId] = isHidden;
+  if (btn) btn.textContent = isHidden ? '▸ Show' : '▾ Hide';
+  cloudSaveDebounced();
+}
+
+/* Apply a previously-saved collapsed state to a section after it is rendered.
+   Called in renderChecklist() for sections that should remember their state. */
+function applyCollapsedState(bodyId, toggleId) {
+  if (!sectionCollapsed[bodyId]) return; // not collapsed — leave as default (expanded)
+  const body = document.getElementById(bodyId);
+  const btn  = document.getElementById(toggleId);
+  if (body) body.classList.add('hidden');
+  if (btn)  btn.textContent = '▸ Show';
+}
+
+/* ── DRAG TO REORDER ── */
+let dragSrcPi = null, dragSrcTi = null;
+
+function onDragStart(e, pi, ti) {
+  dragSrcPi = pi; dragSrcTi = ti;
+  e.dataTransfer.effectAllowed = 'move';
+  document.getElementById('task-' + pi + '-' + ti).classList.add('dragging');
+}
+function onDragEnd(pi, ti) {
+  document.getElementById('task-' + pi + '-' + ti)?.classList.remove('dragging');
+  document.querySelectorAll('.task-row.drag-over').forEach(r => r.classList.remove('drag-over'));
+}
+function onDragOver(e, pi, ti) {
+  e.preventDefault();
+  document.querySelectorAll('.task-row.drag-over').forEach(r => r.classList.remove('drag-over'));
+  document.getElementById('task-' + pi + '-' + ti)?.classList.add('drag-over');
+}
+function onDrop(e, pi, ti) {
+  e.preventDefault();
+  if (dragSrcPi === null) return;
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+
+  const before = [];
+  let flatIdx = 0;
+  tx.phases.forEach((phase, p) => {
+    phase.tasks.forEach((task, t) => {
+      before.push({
+        phaseIdx: p,
+        taskIdx: t,
+        task,
+        checked: !!tx.checked[flatIdx],
+        sub: tx.subChecked ? tx.subChecked[flatIdx] : undefined,
+      });
+      flatIdx++;
+    });
+  });
+
+  const movingEntryIdx = before.findIndex(e2 => e2.phaseIdx === dragSrcPi && e2.taskIdx === dragSrcTi);
+  if (movingEntryIdx === -1) { dragSrcPi = null; dragSrcTi = null; return; }
+  const movingEntry = before.splice(movingEntryIdx, 1)[0];
+
+  const srcTask = tx.phases[dragSrcPi].tasks.splice(dragSrcTi, 1)[0];
+  const targetTi = (dragSrcPi === pi && dragSrcTi < ti) ? ti - 1 : ti;
+  tx.phases[pi].tasks.splice(targetTi, 0, srcTask);
+
+  const newChecked = [];
+  const newSubChecked = {};
+  let newFlatIdx = 0;
+  tx.phases.forEach((phase, p) => {
+    phase.tasks.forEach((task) => {
+      if (task === srcTask) {
+        newChecked[newFlatIdx] = movingEntry.checked;
+        if (movingEntry.sub) newSubChecked[newFlatIdx] = movingEntry.sub;
+      } else {
+        const match = before.find(e2 => e2.task === task);
+        newChecked[newFlatIdx] = match ? match.checked : false;
+        if (match && match.sub) newSubChecked[newFlatIdx] = match.sub;
+      }
+      newFlatIdx++;
+    });
+  });
+
+  tx.checked = newChecked;
+  tx.subChecked = newSubChecked;
+
+  dragSrcPi = null; dragSrcTi = null;
+  saveTx(); renderChecklist();
+}
+
+function onDragStartTpl(e, tab, pi, ti) {
+  e.dataTransfer.setData('text/plain', JSON.stringify({tab, pi, ti}));
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOverTpl(e) { e.preventDefault(); }
+function onDropTpl(e, tab, pi, ti) {
+  e.preventDefault();
+  const src = JSON.parse(e.dataTransfer.getData('text/plain'));
+  if (src.tab !== tab) return;
+  const srcTask = template[tab][src.pi].tasks.splice(src.ti, 1)[0];
+  const targetTi = (src.pi === pi && src.ti < ti) ? ti - 1 : ti;
+  template[tab][pi].tasks.splice(targetTi, 0, srcTask);
+  renderTemplate(tab);
+}
+
+/* Price formatting helpers */
+function formatPriceDisplay(val) {
+  if (!val) return '';
+  const num = val.replace(/[$,]/g, '').trim();
+  if (!num || isNaN(num)) return num;
+  return Number(num).toLocaleString('en-US');
+}
+function formatPriceInput(el) {
+  const cursorPos = el.selectionStart;
+  const before = el.value;
+  const digitsBeforeCursor = before.slice(0, cursorPos).replace(/[^0-9]/g, '').length;
+
+  const raw = before.replace(/[$,]/g, '');
+  if (!raw) { el.value = ''; return; }
+  if (isNaN(raw)) return;
+
+  const formatted = Number(raw).toLocaleString('en-US');
+  el.value = formatted;
+
+  let digitCount = 0, newPos = formatted.length;
+  for (let i = 0; i < formatted.length; i++) {
+    if (/[0-9]/.test(formatted[i])) digitCount++;
+    if (digitCount === digitsBeforeCursor) { newPos = i + 1; break; }
+  }
+  el.setSelectionRange(newPos, newPos);
+}
+
+/* Split a sub-note string (delimited by newline) into array of sub-items */
+function parseSubItems(sub) {
+  if (!sub) return [];
+  return sub.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+/* Build initial subChecked state for a task */
+function initSubChecked(task) {
+  const items = parseSubItems(task.sub);
+  return items.map(() => false);
+}
+
+/* Check if all sub-items for a task are done */
+function allSubsDone(tx, idx) {
+  const sc = tx.subChecked && tx.subChecked[idx];
+  if (!sc || sc.length === 0) return false;
+  return sc.every(Boolean);
+}
+
+/* ── SUPABASE CLOUD SYNC ── */
+/* Replaces the old per-feature localStorage keys with ONE combined row in Supabase,
+   keyed to the logged-in user. Every in-memory variable above stays the same —
+   only how it's loaded/saved changes. */
+
+const SUPABASE_URL = 'https://zwdelhertvslvuqusejj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2ZgNHcYxo2ONVA7tVAdLew_gKdmv-gG';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let cloudSaveTimer = null;
+let cloudSaveInFlight = false;
+let cloudLoaded = false;
+let generalNotes = '';
+
+function setSyncStatus(text) {
+  const el = document.getElementById('sync-status');
+  if (el) el.textContent = text;
+}
+
+function buildAppDataBlob() {
+  return {
+    transactions, template, emailTemplates, settings,
+    globalReminders, globalCustomRems, agents, customContingencies,
+    generalNotes, sectionCollapsed, dismissedReminders,
+  };
+}
+
+function applyAppDataBlob(blob) {
+  if (!blob) return;
+  if (blob.transactions)        transactions = blob.transactions;
+  if (blob.template)            template = blob.template;
+  if (blob.emailTemplates)      emailTemplates = blob.emailTemplates;
+  if (blob.settings)            settings = blob.settings;
+  if (blob.globalReminders)     globalReminders = blob.globalReminders;
+  if (blob.globalCustomRems)    globalCustomRems = blob.globalCustomRems;
+  if (blob.agents)               agents = blob.agents;
+  if (blob.customContingencies) customContingencies = blob.customContingencies;
+  if (typeof blob.generalNotes === 'string') generalNotes = blob.generalNotes;
+  if (blob.sectionCollapsed && typeof blob.sectionCollapsed === 'object') sectionCollapsed = blob.sectionCollapsed;
+  if (blob.dismissedReminders && typeof blob.dismissedReminders === 'object') dismissedReminders = blob.dismissedReminders;
+}
+
+async function loadStorage() {
+  if (!currentUser) return;
+  setSyncStatus('Loading...');
+  try {
+    const { data, error } = await sb
+      .from('app_data')
+      .select('data')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (data && data.data) {
+      applyAppDataBlob(data.data);
+    }
+    cloudLoaded = true;
+    setSyncStatus('Synced');
+    setTimeout(() => setSyncStatus(''), 2000);
+  } catch (e) {
+    console.error('Load error:', e);
+    setSyncStatus('Load failed — check connection');
+  }
+  if (settings.apiKey)  { const el = document.getElementById('api-key'); if (el) el.value = settings.apiKey; }
+  if (settings.myEmail) { const el = document.getElementById('my-email'); if (el) el.value = settings.myEmail; }
+}
+
+function cloudSaveDebounced() {
+  setSyncStatus('Saving...');
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(cloudSaveNow, 600);
+}
+
+async function cloudSaveNow() {
+  if (!currentUser || !cloudLoaded) return;
+  if (cloudSaveInFlight) { cloudSaveTimer = setTimeout(cloudSaveNow, 400); return; }
+  cloudSaveInFlight = true;
+  try {
+    const blob = buildAppDataBlob();
+    const { error } = await sb
+      .from('app_data')
+      .upsert({ user_id: currentUser.id, data: blob, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    if (error) throw error;
+    setSyncStatus('Saved');
+    setTimeout(() => setSyncStatus(''), 1500);
+  } catch (e) {
+    console.error('Save error:', e);
+    setSyncStatus('Save failed — check connection');
+  } finally {
+    cloudSaveInFlight = false;
+  }
+}
+
+function saveTx()             { cloudSaveDebounced(); }
+function saveTpl()             { cloudSaveDebounced(); }
+function saveEtl()             { cloudSaveDebounced(); }
+function saveRem()             { cloudSaveDebounced(); }
+function saveCustomRems()      { cloudSaveDebounced(); }
+function saveAgents()          { cloudSaveDebounced(); }
+function saveContingencies()   { cloudSaveDebounced(); }
+function saveNotes()           { cloudSaveDebounced(); }
+function saveSettings() {
+  const el = document.getElementById('my-email');
+  if (el) settings.myEmail = el.value.trim();
+  cloudSaveDebounced();
+}
+function saveApiKey() {
+  const el = document.getElementById('api-key');
+  if (el) settings.apiKey = el.value.trim();
+  cloudSaveDebounced();
+}
+
+/* ── DATE HELPERS ── */
+function fmtDate(val) {
+  if (!val) return 'TBD';
+  const d = new Date(val + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr + 'T00:00:00');
+  return Math.round((target - today) / 86400000);
+}
+
+/* ── SELECT ── */
+function rebuildSelect() {
+  const sel = document.getElementById('tx-select');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select a transaction —</option>';
+
+  const txIds = Object.keys(transactions)
+    .sort((a,b) => transactions[b].created - transactions[a].created);
+
+  // Group by agent
+  const grouped = {};   // agentId -> [id, ...]
+  const noAgent = [];
+
+  txIds.forEach(id => {
+    const tx = transactions[id];
+    const aid = tx.agentId || '';
+    if (aid && agents.find(a => a.id === aid)) {
+      if (!grouped[aid]) grouped[aid] = [];
+      grouped[aid].push(id);
+    } else {
+      noAgent.push(id);
+    }
+  });
+
+  function addTxOption(id) {
+    const tx = transactions[id];
+    const opt = document.createElement('option');
+    opt.value = id;
+    const typeLabel = tx.type === 'buyer' ? 'Buyer' : 'Listing';
+    const clientPart = tx.clientName ? ' · ' + tx.clientName : '';
+    opt.textContent = tx.address + clientPart + ' · ' + typeLabel;
+    sel.appendChild(opt);
+  }
+
+  // Agents with transactions
+  agents.forEach(a => {
+    if (grouped[a.id] && grouped[a.id].length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = a.name;
+      sel.appendChild(grp);
+      grouped[a.id].forEach(id => {
+        const tx = transactions[id];
+        const opt = document.createElement('option');
+        opt.value = id;
+        const typeLabel = tx.type === 'buyer' ? 'Buyer' : 'Listing';
+        const clientPart = tx.clientName ? ' · ' + tx.clientName : '';
+        opt.textContent = tx.address + clientPart + ' · ' + typeLabel;
+        grp.appendChild(opt);
+      });
+    }
+  });
+
+  // Unassigned transactions
+  if (noAgent.length > 0) {
+    if (agents.length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'Unassigned';
+      sel.appendChild(grp);
+      noAgent.forEach(id => {
+        const tx = transactions[id];
+        const opt = document.createElement('option');
+        opt.value = id;
+        const typeLabel = tx.type === 'buyer' ? 'Buyer' : 'Listing';
+        const clientPart = tx.clientName ? ' · ' + tx.clientName : '';
+        opt.textContent = tx.address + clientPart + ' · ' + typeLabel;
+        grp.appendChild(opt);
+      });
+    } else {
+      noAgent.forEach(id => addTxOption(id));
+    }
+  }
+
+  if (cur && transactions[cur]) sel.value = cur;
+}
+
+/* ── NEW TX ── */
+function toggleNewForm() {
+  const f = document.getElementById('new-tx-form');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) {
+    populateAgentDropdown('new-agent', '');
+    document.getElementById('new-address').focus();
+  }
+}
+
+function populateAgentDropdown(selectId, selectedAgentId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const cur = selectedAgentId || sel.value;
+  sel.innerHTML = '<option value="">— No agent assigned —</option>';
+  agents.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name;
+    if (a.id === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function createTransaction() {
+  const address = document.getElementById('new-address').value.trim();
+  const client  = document.getElementById('new-client').value.trim();
+  const type    = document.getElementById('new-type').value;
+  const agentId = document.getElementById('new-agent').value;
+  if (!address) { showToast('Please enter a property address.', 'error'); return; }
+  const phases = deepClone(template[type]);
+  const total  = phases.reduce((s,p) => s + p.tasks.length, 0);
+  const id     = 'tx-' + Date.now();
+  const subChecked = {};
+  let tIdx = 0;
+  phases.forEach(p => p.tasks.forEach(t => {
+    const items = parseSubItems(t.sub);
+    if (items.length > 0) subChecked[tIdx] = items.map(() => false);
+    tIdx++;
+  }));
+  transactions[id] = {
+    address, type, created: Date.now(),
+    clientName: client,
+    agentId: agentId || '',
+    phases, checked: new Array(total).fill(false),
+    subChecked,
+    dates: { acceptance:'', inspection:'', appraisal:'', loan:'', coe:'' },
+    parties: { client: client, agent:'', otherAgent:'', lender:'', escrow:'', price:'' }
+  };
+  saveTx(); rebuildSelect();
+  document.getElementById('new-address').value = '';
+  document.getElementById('new-client').value  = '';
+  document.getElementById('new-tx-form').classList.remove('open');
+  document.getElementById('tx-select').value = id;
+  loadTransaction(id);
+}
+
+async function deleteTransaction() {
+  if (!currentTxId) return;
+  const addr = transactions[currentTxId].address;
+  if (!(await appConfirm('Delete "' + addr + '"? This cannot be undone.'))) return;
+  delete transactions[currentTxId];
+  saveTx();
+  currentTxId = null;
+  rebuildSelect();
+  // Reset UI fully
+  document.getElementById('tx-select').value = '';
+  document.getElementById('delete-btn').style.display = 'none';
+  document.getElementById('reminder-banner').classList.remove('show');
+  // Reset all views to hidden, show checklist view with empty state
+  ['view-checklist','view-emails','view-template','view-reminders','view-settings'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('view-checklist').style.display = 'block';
+  document.getElementById('checklist-content').style.display = 'none';
+  document.getElementById('checklist-content').innerHTML = '';
+  document.getElementById('empty-state').style.display = 'block';
+  currentView = 'checklist';
+}
+
+function loadTransaction(id) {
+  if (!id) {
+    currentTxId = null;
+    document.getElementById('delete-btn').style.display = 'none';
+    document.getElementById('reminder-banner').classList.remove('show');
+    document.getElementById('empty-state').style.display = 'block';
+    document.getElementById('checklist-content').style.display = 'none';
+    return;
+  }
+  currentTxId = id;
+  document.getElementById('delete-btn').style.display = 'inline-flex';
+  checkReminders();
+  showView('checklist');
+  renderChecklist();
+}
+
+/* ── REMINDERS ── */
+/* Get all contingency definitions: built-in + custom */
+function allContingencies() {
+  const builtIn = [
+    { key: 'emd',                label: 'EMD (Earnest Money Deposit)', defaultDaysBefore: 1 },
+    { key: 'inspection',         label: 'Inspection contingency',      defaultDaysBefore: 0 },
+    { key: 'appraisal',          label: 'Appraisal contingency',       defaultDaysBefore: 7 },
+    { key: 'loan',               label: 'Loan contingency',            defaultDaysBefore: 1 },
+    { key: 'insurance',          label: 'Insurance contingency',       defaultDaysBefore: 1 },
+    { key: 'seller_disclosures', label: 'Seller disclosures due',      defaultDaysBefore: 1 },
+    { key: 'coe',                label: 'Close of escrow',             defaultDaysBefore: 7 },
+  ];
+  const custom = customContingencies.map(c => ({
+    key: c.id, label: c.label, defaultDaysBefore: c.defaultDaysBefore || 3
+  }));
+  return [...builtIn, ...custom];
+}
+
+function getEffectiveReminders(tx) {
+  const overrides = tx.reminderOverrides || {};
+  const result = {};
+  allContingencies().forEach(c => {
+    const globalVal = globalReminders[c.key] !== undefined ? globalReminders[c.key] : [c.defaultDaysBefore];
+    const gArr = Array.isArray(globalVal) ? globalVal : [globalVal];
+    const oVal = overrides[c.key];
+    const oArr = oVal !== undefined && oVal !== null ? (Array.isArray(oVal) ? oVal : [oVal]) : null;
+    result[c.key] = oArr !== null ? oArr : gArr;
+  });
+  return result;
+}
+
+/* Collect reminder alerts for a single transaction object and return them as
+   an array of HTML strings. Used by checkReminders() which scans all transactions. */
+function getReminderAlertsForTx(tx) {
+  const alerts = [];
+  const d   = tx.dates || {};
+  const rem = getEffectiveReminders(tx);
+  const label = tx.address ? `<span style="font-size:11px;color:#888;margin-left:4px;">(${esc(tx.address)})</span>` : '';
+
+  // Contingency date reminders
+  const checks = allContingencies().map(c => ({
+    key: c.key, label: c.label,
+    date: d[c.key] || '',
+    daysBefore: rem[c.key] !== undefined ? rem[c.key] : c.defaultDaysBefore
+  }));
+  checks.forEach(c => {
+    if (!c.date) return;
+    const days = daysUntil(c.date);
+    if (days === null) return;
+    const thresholds = Array.isArray(c.daysBefore) ? c.daysBefore : [c.daysBefore];
+    const maxThreshold = Math.max(...thresholds);
+    if (days >= 0 && days <= maxThreshold) {
+      const msg = days === 0
+        ? `<strong>${c.label}</strong> is due <strong>today</strong> (${fmtDate(c.date)})${label}`
+        : `<strong>${c.label}</strong> is due in <strong>${days} day${days===1?'':'s'}</strong> on ${fmtDate(c.date)}${label}`;
+      alerts.push(msg);
+    }
+  });
+
+  // Task-level reminders
+  tx.phases.forEach(phase => {
+    phase.tasks.forEach(task => {
+      (task.reminders || []).forEach(dateStr => {
+        if (!dateStr) return;
+        const days = daysUntil(dateStr);
+        if (days === 0) alerts.push(`Task reminder: <strong>${esc(task.text.substring(0,50))}${task.text.length>50?'…':''}</strong> — due today${label}`);
+        else if (days === 1) alerts.push(`Task reminder: <strong>${esc(task.text.substring(0,50))}${task.text.length>50?'…':''}</strong> — due tomorrow${label}`);
+      });
+    });
+  });
+
+  // Custom reminders (global + tx-specific)
+  const allCustom = [...globalCustomRems, ...(tx.customRems || [])];
+  allCustom.forEach(r => {
+    const trigDate = resolveReminderDate(r, tx);
+    if (!trigDate) return;
+    const days = daysUntil(trigDate);
+    if (days === null || days < 0) return;
+    if (days === 0)      alerts.push(`<strong>${esc(r.title)}</strong> — due <strong>today</strong>${label}`);
+    else if (days === 1) alerts.push(`<strong>${esc(r.title)}</strong> — due <strong>tomorrow</strong>${label}`);
+    else if (days <= 3)  alerts.push(`<strong>${esc(r.title)}</strong> — due in <strong>${days} days</strong> (${fmtDate(trigDate)})${label}`);
+  });
+
+  return alerts;
+}
+
+/* Check ALL transactions for active reminders and update the banner.
+   Called once on load, then every 60 seconds via setInterval. */
+function checkReminders() {
+  if (!cloudLoaded) return; // don't run before data is loaded from Supabase
+  const allAlerts = [];
+  Object.values(transactions).forEach(tx => {
+    getReminderAlertsForTx(tx).forEach(a => allAlerts.push(a));
+  });
+
+  const banner = document.getElementById('reminder-banner');
+  if (!banner) return;
+
+  // Filter out alerts the user has already dismissed this session
+  // Use content-based keys (not index) so they stay stable across re-renders
+  const today = new Date().toDateString();
+  function alertKey(a) {
+    return today + '|' + a.replace(/<[^>]+>/g, '').trim().substring(0, 80);
+  }
+
+  // Auto-clear any dismissals from previous days so reminders re-surface the next day
+  Object.keys(dismissedReminders).forEach(k => {
+    if (!k.startsWith(today)) delete dismissedReminders[k];
+  });
+
+  const visibleAlerts = allAlerts.filter(a => !dismissedReminders[alertKey(a)]);
+
+  if (visibleAlerts.length) {
+    banner.innerHTML = '<div style="font-weight:500;margin-bottom:6px;">Upcoming deadline reminders</div>' +
+      visibleAlerts.map(a => {
+        const safeKey = encodeURIComponent(alertKey(a));
+        return `<div class="reminder-item">
+          <div class="reminder-dot"></div>
+          <div style="flex:1;">${a}</div>
+          <button onclick="dismissReminder('${safeKey}')" title="Dismiss" style="background:none;border:none;cursor:pointer;color:#BA7517;font-size:16px;padding:0 0 0 8px;line-height:1;flex-shrink:0;">×</button>
+        </div>`;
+      }).join('');
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function dismissReminder(safeKey) {
+  const key = decodeURIComponent(safeKey);
+  dismissedReminders[key] = true;
+  cloudSaveDebounced(); // persist so dismissal survives page refresh
+  checkReminders();
+}
+
+/* Resolve a custom reminder's trigger date given a transaction */
+function resolveReminderDate(rem, tx) {
+  const d = tx ? (tx.dates || {}) : {};
+  if (rem.dateType === 'specific') {
+    return rem.dateValue || null;
+  } else if (rem.dateType === 'before_coe') {
+    if (!d.coe) return null;
+    const coe = new Date(d.coe + 'T12:00:00');
+    coe.setDate(coe.getDate() - (rem.daysBefore || 0));
+    return coe.toISOString().split('T')[0];
+  } else if (rem.dateType === 'after_coe') {
+    if (!d.coe) return null;
+    const coe = new Date(d.coe + 'T12:00:00');
+    coe.setDate(coe.getDate() + (rem.daysAfter || 0));
+    return coe.toISOString().split('T')[0];
+  } else if (rem.dateType === 'after_acceptance') {
+    if (!d.acceptance) return null;
+    const acc = new Date(d.acceptance + 'T12:00:00');
+    acc.setDate(acc.getDate() + (rem.daysAfter || 0));
+    return acc.toISOString().split('T')[0];
+  }
+  return null;
+}
+
+function resolvedDateLabel(rem, tx) {
+  const d = resolveReminderDate(rem, tx);
+  if (!d) return 'Date TBD (fill in transaction dates)';
+  const days = daysUntil(d);
+  let suffix = '';
+  if (days === 0) suffix = ' — today';
+  else if (days === 1) suffix = ' — tomorrow';
+  else if (days > 0) suffix = ` — in ${days} days`;
+  else if (days < 0) suffix = ` — ${Math.abs(days)} days ago`;
+  return fmtDate(d) + suffix;
+}
+
+/* ── VIEWS ── */
+function showView(v) {
+  currentView = v;
+  document.getElementById('view-checklist').style.display = v === 'checklist' ? 'block' : 'none';
+  document.getElementById('view-emails').style.display    = v === 'emails'    ? 'block' : 'none';
+  document.getElementById('view-template').style.display  = v === 'template'  ? 'block' : 'none';
+  document.getElementById('view-reminders').style.display = v === 'reminders' ? 'block' : 'none';
+  document.getElementById('view-notes').style.display     = v === 'notes'     ? 'block' : 'none';
+  document.getElementById('view-settings').style.display  = v === 'settings'  ? 'block' : 'none';
+  document.querySelectorAll('#main-nav .nav-tab').forEach((b,i) =>
+    b.classList.toggle('active', ['checklist','notes','emails','template','reminders','settings'][i] === v));
+  if (v === 'emails')    renderEmails();
+  if (v === 'template')  renderTemplate(currentTplTab);
+  if (v === 'reminders') renderRemindersView();
+  if (v === 'notes')     renderNotes();
+  if (v === 'settings')  renderSettings();
+}
+
+/* ── CHECKLIST ── */
+function renderChecklist() {
+  const tx = transactions[currentTxId];
+  document.getElementById('empty-state').style.display = 'none';
+  const content = document.getElementById('checklist-content');
+  content.style.display = 'block';
+
+  const p = tx.parties || {};
+  const d = tx.dates   || {};
+
+  let html = `
+    <div class="tx-header">
+      <div><div class="tx-title">${esc(tx.address)}</div><div class="tx-subtitle">${tx.type==='buyer'?'Buyer':'Listing'} transaction</div></div>
+      <div style="display:flex;gap:6px;" class="no-print">
+        <button class="btn sm" onclick="resetCurrent()">Reset</button>
+        <button class="btn sm" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <div class="dates-card no-print">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="dates-title">Transaction details</div>
+          <button class="collapse-toggle" onclick="toggleSection('details-body','details-toggle')" id="details-toggle">▾ Hide</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:12px;color:#666;margin:0;">Agent:</label>
+            <select id="d-agent-assign" style="height:28px;font-size:12px;width:auto;min-width:140px;" onchange="autoSaveAgent()"></select>
+          </div>
+          <button class="btn sm primary" onclick="saveTxDetails()">Save details</button>
+        </div>
+      </div>
+      <div id="details-body" class="collapse-body">
+      <div class="dates-grid">
+        <div class="date-field"><label>${tx.type==='buyer'?'Buyer(s)':'Seller(s)'}</label><input type="text" id="d-client" value="${esc(p.client||'')}" placeholder="Client name(s)" oninput="autoSaveDetails()" /></div>
+        <div class="date-field"><label>${tx.type==='buyer'?"Buyer's agent":'Listing agent'}</label><input type="text" id="d-agent" value="${esc(p.agent||'')}" placeholder="Agent name" oninput="autoSaveDetails()" /></div>
+        <div class="date-field"><label>${tx.type==='buyer'?'Listing agent':"Buyer's agent"}</label><input type="text" id="d-other-agent" value="${esc(p.otherAgent||'')}" placeholder="Other agent name" oninput="autoSaveDetails()" /></div>
+        <div class="date-field"><label>${tx.type==='buyer'?'Seller(s)':'Buyer(s)'}</label><input type="text" id="d-other-client" value="${esc(p.otherClient||'')}" placeholder="${tx.type==='buyer'?'Seller name(s)':'Buyer name(s)'}" oninput="autoSaveDetails()" /></div>
+
+        <div class="date-field"><label>Purchase price</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#666;font-size:14px;pointer-events:none;">$</span>
+            <input type="text" id="d-price" value="${esc(formatPriceDisplay(p.price||''))}" placeholder="1,250,000" style="padding-left:20px;" oninput="formatPriceInput(this);autoSaveDetails()" />
+          </div>
+        </div>
+        <div class="date-field"><label>Acceptance date</label><input type="date" id="d-acceptance" value="${d.acceptance||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>EMD (Earnest Money Deposit)</label><input type="date" id="d-emd" value="${d.emd||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>Seller disclosures due</label><input type="date" id="d-seller_disclosures" value="${d.seller_disclosures||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>Inspection contingency</label><input type="date" id="d-inspection" value="${d.inspection||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>Appraisal contingency</label><input type="date" id="d-appraisal" value="${d.appraisal||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>Loan contingency</label><input type="date" id="d-loan" value="${d.loan||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>Insurance contingency</label><input type="date" id="d-insurance" value="${d.insurance||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>Close of escrow (COE)</label><input type="date" id="d-coe" value="${d.coe||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-field"><label>Possession date</label><input type="date" id="d-possession" value="${d.possession||''}" onchange="autoSaveDetails()" /></div>
+        ${customContingencies.map(c => `<div class="date-field"><label>${esc(c.label)}</label><input type="date" id="d-${c.id}" value="${d[c.id]||''}" /></div>`).join('')}
+      </div>
+      </div><!-- /details-body -->
+      <div style="border-top:0.5px solid #ededea;margin-top:1rem;padding-top:1rem;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:500;color:#1a1a1a;">Reminder timing</div>
+          <span style="font-size:11px;color:#888;">(overrides global defaults)</span>
+          <button class="collapse-toggle" onclick="toggleSection('rem-timing-body','rem-timing-toggle')" id="rem-timing-toggle" style="margin-left:4px;">▾ Hide</button>
+        </div>
+        <div id="rem-timing-body" class="collapse-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          ${allContingencies().map(c => {
+            const ov = tx.reminderOverrides || {};
+            const ovVal = ov[c.key];
+            const hasOverride = ovVal !== undefined && ovVal !== null;
+            const globalArr = Array.isArray(globalReminders[c.key]) ? globalReminders[c.key] : [globalReminders[c.key] !== undefined ? globalReminders[c.key] : c.defaultDaysBefore];
+            const vals = hasOverride ? (Array.isArray(ovVal) ? ovVal : [ovVal]) : null;
+            const defLabel = globalArr.map(v => v === 0 ? 'day of' : v + ' day' + (v===1?'':'s') + ' before').join(', ');
+            const dayOpts = (sel) => [0,1,2,3,5,7,10,14].map(v =>
+              '<option value="' + v + '"' + (v===sel?' selected':'') + '>' + (v===0?'Day of':v+' day'+(v===1?'':'s')+' before') + '</option>'
+            ).join('');
+            return '<div class="date-field">' +
+              '<label>' + esc(c.label) + '</label>' +
+              '<div id="tx-rem-container-' + c.key + '">' +
+                (vals === null
+                  ? '<select onchange="autoSaveDetails()" style="color:#aaa;"><option value="">Global default (' + defLabel + ')</option>' + dayOpts(-1) + '</select>'
+                  : vals.map((v,i) =>
+                      '<div style="display:flex;gap:4px;margin-bottom:4px;">' +
+                        '<select onchange="autoSaveDetails()" style="flex:1;">' + dayOpts(v) + '</select>' +
+                        (vals.length > 1 ? '<button class="btn sm danger" style="padding:0 8px;" onclick="removeTxReminder(\u0027' + c.key + '\u0027,' + i + ')">&#x2715;</button>' : '') +
+                      '</div>'
+                    ).join('')
+                ) +
+              '</div>' +
+              '<button class="btn ghost sm" style="margin-top:3px;font-size:11px;" onclick="addTxReminder(\u0027' + c.key + '\u0027)">' + '+ Add reminder' + '</button>' +
+            '</div>';
+          }).join('')}
+        </div>
+        </div><!-- /rem-timing-body -->
+      </div>
+    </div>
+
+    <div class="dates-card no-print">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="dates-title">Notes & reminders for this transaction</div>
+          <button class="collapse-toggle" onclick="toggleSection('tx-notes-body','tx-notes-toggle')" id="tx-notes-toggle">▾ Hide</button>
+        </div>
+        <span id="tx-notes-saved-msg" style="font-size:12px;color:#1D9E75;display:none;">Saved</span>
+      </div>
+      <div id="tx-notes-body" class="collapse-body">
+        <textarea id="tx-notes-textarea" style="width:100%;min-height:140px;font-size:13px;line-height:1.7;border:0.5px solid #c8c7c1;border-radius:8px;padding:10px;font-family:inherit;resize:vertical;" placeholder="Notes specific to this transaction — follow-ups, things to remember, anything you don't want to lose track of...">${esc(tx.notes||'')}</textarea>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="progress-wrap">
+        <div class="progress-meta"><span id="prog-label">—</span><span id="prog-pct">—</span></div>
+        <div class="progress-track"><div class="progress-fill" id="prog-bar" style="width:0%"></div></div>
+      </div>
+    </div>`;
+
+  let globalIdx = 0;
+  tx.phases.forEach((phase, pi) => {
+    html += `<div class="phase-block" data-pi="${pi}">
+      <div class="phase-complete-banner no-print" onclick="togglePhaseCollapse(${pi})">
+        <span>✓ All tasks complete in this phase</span>
+        <button class="btn sm ghost" onclick="event.stopPropagation();togglePhaseCollapse(${pi})">Show anyway</button>
+      </div>
+      <div class="phase-header">
+        <div class="phase-label" id="phase-label-${pi}">${esc(phase.label)}</div>
+        <input type="text" id="phase-label-input-${pi}" value="${esc(phase.label)}" style="display:none;font-size:13px;font-weight:500;text-transform:none;letter-spacing:normal;height:28px;max-width:260px;" onkeydown="if(event.key==='Enter')savePhaseLabel(${pi});if(event.key==='Escape')cancelPhaseLabel(${pi})" onblur="savePhaseLabel(${pi})" />
+        <div style="display:flex;gap:6px;" class="no-print">
+          <button class="btn ghost sm" id="phase-rename-btn-${pi}" onclick="startPhaseRename(${pi})">Rename</button>
+          <button class="btn sm danger" onclick="deletePhase(${pi})">Delete phase</button>
+        </div>
+      </div>
+      <div class="phase-card" id="phase-card-${pi}">`;
+    phase.tasks.forEach((task, ti) => {
+      const idx = globalIdx++;
+      html += taskRowHTML(pi, ti, idx, task, tx.checked[idx] ? ' done' : '');
+    });
+    html += `<div class="add-task-row no-print">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" id="add-input-${pi}" placeholder="Add a task to this phase..." style="height:30px;font-size:13px;" onkeydown="if(event.key==='Enter')quickAddTask(${pi})" />
+          <button class="btn sm primary" onclick="quickAddTask(${pi})">Add</button>
+        </div>
+      </div></div></div>`;
+    globalIdx = pi === tx.phases.length - 1 ? globalIdx : tx.phases.slice(0, pi+1).reduce((s,p)=>s+p.tasks.length,0);
+  });
+
+  content.innerHTML = html;
+  recalcIndices();
+  updateProgress();
+
+  // On render (e.g. page load or tab switch), tasks that are ALREADY checked from
+  // a prior session should be hidden right away — the 15s undo window only matters
+  // in the moment right after checking something off, not on every subsequent load.
+  tx.phases.forEach((phaseX, pix) => {
+    phaseX.tasks.forEach((taskX, tix) => {
+      const rowX = document.getElementById(`task-${pix}-${tix}`);
+      if (rowX && rowX.classList.contains('done')) {
+        rowX.classList.add('hidden-completed');
+        const subElX = document.getElementById(`subchecks-${pix}-${tix}`);
+        if (subElX) subElX.classList.add('hidden-completed');
+      }
+    });
+    checkPhaseAutoCollapse(pix);
+  });
+
+  // Populate agent assignment dropdown
+  const tx2 = transactions[currentTxId];
+  populateAgentDropdown('d-agent-assign', tx2.agentId || '');
+  // Auto-populate agent name field from assigned agent if not already filled
+  const assignedAgent = agents.find(a => a.id === tx2.agentId);
+  if (assignedAgent) {
+    const agentField = document.getElementById('d-agent');
+    if (agentField && !agentField.value.trim()) {
+      agentField.value = assignedAgent.name;
+    }
+  }
+  // Restore collapsed state for sections that were previously hidden
+  applyCollapsedState('details-body', 'details-toggle');
+  applyCollapsedState('rem-timing-body', 'rem-timing-toggle');
+
+  // Wire up auto-save for per-transaction notes
+  const notesTa = document.getElementById('tx-notes-textarea');
+  if (notesTa) {
+    notesTa.addEventListener('input', () => {
+      const txN = transactions[currentTxId];
+      if (!txN) return;
+      txN.notes = notesTa.value;
+      saveTx();
+      const msg = document.getElementById('tx-notes-saved-msg');
+      if (msg) { msg.style.display = 'inline'; clearTimeout(notesTa._saveTimer); notesTa._saveTimer = setTimeout(() => msg.style.display = 'none', 1500); }
+    });
+  }
+}
+
+function taskRowHTML(pi, ti, idx, task, doneClass) {
+  const tx = transactions[currentTxId];
+  const subItems = parseSubItems(task.sub);
+  const hasSubItems = subItems.length > 0;
+  const subCheckedArr = (tx.subChecked && tx.subChecked[idx]) || subItems.map(() => false);
+  const allDone = hasSubItems && subCheckedArr.every(Boolean);
+  const autoDoneClass = allDone ? ' auto-done' : '';
+
+  // Main task row checkbox is always clickable, independent of sub-items
+  const cbClick = `onclick="toggleTask(${pi},${ti})"`;
+  const contentClick = `onclick="toggleTask(${pi},${ti})"`;
+  const cbTitle = '';
+
+  const taskRems = (task.reminders || []).filter(r => r);
+  const remBadge = taskRems.length > 0 ? `<span class="task-rem-badge">⏰ ${taskRems.length} reminder${taskRems.length>1?'s':''}</span>` : '';
+  const linkedKey = task.linkedEmail;
+  const linkedTpl = linkedKey && emailTemplates[linkedKey] ? emailTemplates[linkedKey] : null;
+  const emailBadge = linkedTpl
+    ? `<button class="task-email-badge no-print" title="Open ${esc(linkedTpl.title||linkedKey)} in Gmail" onclick="event.stopPropagation();sendLinkedEmail(${pi},${ti})">✉ ${esc(linkedTpl.title||linkedKey)}</button>`
+    : '';
+
+  let html = `<div class="task-row${doneClass}${autoDoneClass}" data-pi="${pi}" data-ti="${ti}" data-idx="${idx}" id="task-${pi}-${ti}"
+    draggable="true"
+    ondragstart="onDragStart(event,${pi},${ti})"
+    ondragend="onDragEnd(${pi},${ti})"
+    ondragover="onDragOver(event,${pi},${ti})"
+    ondrop="onDrop(event,${pi},${ti})">
+    <div class="drag-handle no-print" title="Drag to reorder">⠿</div>
+    <div class="cb" ${cbClick}><span class="check-icon">✓</span></div>
+    <div class="task-content" ${contentClick}>
+      <div class="task-main">${esc(task.text)}</div>
+    </div>
+    ${remBadge}
+    ${emailBadge}
+    ${task.badge ? `<span class="task-badge">${esc(task.badge)}</span>` : ''}
+    <div class="task-actions no-print">
+      <button class="task-act-btn" title="Edit" onclick="openEditTask(${pi},${ti})">✎</button>
+      <button class="task-act-btn del" title="Delete" onclick="deleteTask(${pi},${ti})">✕</button>
+    </div>
+  </div>`;
+
+  // Sub-checks section
+  if (hasSubItems) {
+    html += `<div class="sub-checks" id="subchecks-${pi}-${ti}">`;
+    subItems.forEach((item, si) => {
+      const subDone = subCheckedArr[si] ? ' sub-done' : '';
+      html += `<div class="sub-check-row${subDone}" id="sub-${pi}-${ti}-${si}">
+        <div class="sub-cb" onclick="toggleSub(${pi},${ti},${si})"><span class="sub-check-icon">✓</span></div>
+        <div class="sub-text" onclick="toggleSub(${pi},${ti},${si})">${esc(item)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Edit form
+  html += `<div class="task-edit-form" id="edit-form-${pi}-${ti}">
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div class="field-group"><label>Task text</label><textarea id="edit-text-${pi}-${ti}" rows="2">${esc(task.text)}</textarea></div>
+      <div class="field-group">
+        <label>Sub-items (optional) — press <strong>Enter</strong> after each item to add another checkbox</label>
+        <textarea id="edit-sub-${pi}-${ti}" rows="3" placeholder="Step one&#10;Step two&#10;Step three" style="font-size:13px;min-height:70px;" oninput="livePreviewSubs(${pi},${ti})">${esc((task.sub||''))}</textarea>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;">Each line becomes its own checkbox</div>
+        <div id="sub-preview-${pi}-${ti}" style="margin-top:8px;"></div>
+      </div>
+      <div class="field-group"><label>Badge (optional)</label><input type="text" id="edit-badge-${pi}-${ti}" value="${esc(task.badge||'')}" placeholder="if HOA" style="max-width:180px;" /></div>
+      <div class="field-group">
+        <label>Task reminders — set a date to be reminded about this specific task</label>
+        <div id="edit-reminders-${pi}-${ti}">
+          ${(task.reminders||[]).map((r,ri) => `<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;">
+            <input type="date" value="${r||''}" style="flex:1;height:30px;font-size:12px;" id="edit-rem-${pi}-${ti}-${ri}" />
+            <button class="btn sm danger" style="padding:0 8px;" onclick="removeTaskReminder(${pi},${ti},${ri})">✕</button>
+          </div>`).join('')}
+        </div>
+        <button class="btn ghost sm" style="margin-top:4px;" onclick="addTaskReminder(${pi},${ti})">+ Add reminder date</button>
+      </div>
+      <div class="field-group">
+        <label>Link an email to this task — adds a quick-send button on the checklist</label>
+        <select id="edit-linked-email-${pi}-${ti}">
+          <option value="">No email linked</option>
+          ${Object.keys(emailTemplates).map(k => `<option value="${k}" ${task.linkedEmail===k?'selected':''}>${esc(emailTemplates[k].title||k)}</option>`).join('')}
+        </select>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;">Go to the Emails tab to create or edit templates first.</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn sm" onclick="closeEditTask(${pi},${ti})">Cancel</button>
+      <button class="btn sm primary" onclick="saveEditTask(${pi},${ti})">Save</button>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function addTxReminder(key) {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  autoSaveDetails(); // save current form state before re-render
+  if (!tx.reminderOverrides) tx.reminderOverrides = {};
+  autoSaveDetails();
+  const cur = tx.reminderOverrides[key];
+  const curArr = cur !== null && cur !== undefined ? (Array.isArray(cur) ? [...cur] : [cur]) : [3];
+  if (!cur) {
+    tx.reminderOverrides[key] = curArr;
+  } else {
+    tx.reminderOverrides[key] = [...curArr, 3];
+  }
+  saveTx();
+  renderChecklist();
+}
+function removeTxReminder(key, idx) {
+  const tx = transactions[currentTxId];
+  if (!tx || !tx.reminderOverrides) return;
+  autoSaveDetails(); // save current form state before re-render
+  const cur = tx.reminderOverrides[key];
+  const curArr = Array.isArray(cur) ? cur : [cur];
+  curArr.splice(idx, 1);
+  tx.reminderOverrides[key] = curArr.length ? curArr : null;
+  saveTx();
+  renderChecklist();
+}
+function autoSaveAgent() {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  tx.agentId = document.getElementById('d-agent-assign')?.value || '';
+  saveTx();
+  rebuildSelect();
+  const assignedAgent = agents.find(a => a.id === tx.agentId);
+  const agentField = document.getElementById('d-agent');
+  if (agentField && assignedAgent) agentField.value = assignedAgent.name;
+  autoSaveDetails();
+}
+
+function autoSaveDetails() {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  // Parties
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+  const getDate = id => document.getElementById(id)?.value || '';
+  const rawPrice = get('d-price').replace(/[$,]/g,'');
+  tx.clientName = get('d-client');
+  tx.parties = {
+    client:      get('d-client'),
+    agent:       get('d-agent'),
+    otherAgent:  get('d-other-agent'),
+    otherClient: get('d-other-client'),
+    price:       rawPrice ? '$' + Number(rawPrice).toLocaleString('en-US') : '',
+  };
+  tx.dates = {
+    acceptance:         getDate('d-acceptance'),
+    emd:                getDate('d-emd'),
+    inspection:         getDate('d-inspection'),
+    appraisal:          getDate('d-appraisal'),
+    loan:               getDate('d-loan'),
+    insurance:          getDate('d-insurance'),
+    seller_disclosures: getDate('d-seller_disclosures'),
+    possession:         getDate('d-possession'),
+    coe:                getDate('d-coe'),
+  };
+  customContingencies.forEach(c => {
+    const el = document.getElementById('d-' + c.id);
+    if (el) tx.dates[c.id] = el.value;
+  });
+  // Reminder overrides (read from current rendered selects)
+  const overrides = tx.reminderOverrides || {};
+  allContingencies().forEach(c => {
+    const container = document.getElementById('tx-rem-container-' + c.key);
+    if (!container) return;
+    const selects = container.querySelectorAll('select');
+    if (selects.length === 0) return;
+    const vals = Array.from(selects).map(s => s.value).filter(v => v !== '' && !isNaN(parseInt(v))).map(v => parseInt(v));
+    overrides[c.key] = vals.length ? vals : null;
+  });
+  tx.reminderOverrides = overrides;
+  rebuildSelect();
+  saveTx();
+  checkReminders();
+}
+
+function saveTxDetails() {
+  const tx = transactions[currentTxId];
+  tx.agentId = document.getElementById('d-agent-assign')?.value || '';
+  tx.clientName = document.getElementById('d-client')?.value.trim() || tx.clientName || '';
+  tx.parties = {
+    client:      document.getElementById('d-client').value.trim(),
+    agent:       document.getElementById('d-agent').value.trim(),
+    otherAgent:  document.getElementById('d-other-agent').value.trim(),
+    otherClient: document.getElementById('d-other-client')?.value.trim() || '',
+    price:       '$' + (document.getElementById('d-price').value.replace(/[$,]/g,'').trim()),
+  };
+  const dates = {
+    acceptance: document.getElementById('d-acceptance').value,
+    emd:        document.getElementById('d-emd').value,
+    inspection: document.getElementById('d-inspection').value,
+    appraisal:  document.getElementById('d-appraisal').value,
+    loan:       document.getElementById('d-loan').value,
+    insurance:         document.getElementById('d-insurance').value,
+    seller_disclosures: document.getElementById('d-seller_disclosures').value,
+    possession:         document.getElementById('d-possession').value,
+    coe:        document.getElementById('d-coe').value,
+  };
+  customContingencies.forEach(c => {
+    const el = document.getElementById('d-' + c.id);
+    if (el) dates[c.id] = el.value;
+  });
+  tx.dates = dates;
+  const overrides = {};
+  allContingencies().forEach(c => {
+    const container = document.getElementById('tx-rem-container-' + c.key);
+    if (!container) return;
+    const selects = container.querySelectorAll('select');
+    if (selects.length === 0) { overrides[c.key] = null; return; }
+    // Filter out empty values (= global default) and non-numeric
+    const vals = Array.from(selects).map(s => s.value).filter(v => v !== '' && !isNaN(parseInt(v))).map(v => parseInt(v));
+    overrides[c.key] = vals.length ? vals : null;
+  });
+  tx.reminderOverrides = overrides;
+  saveTx();
+  checkReminders();
+  const btn = event.target;
+  btn.textContent = 'Saved!';
+  setTimeout(() => btn.textContent = 'Save details', 1500);
+}
+
+async function deletePhase(pi) {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  const phase = tx.phases[pi];
+  if (!phase) return;
+  const taskCount = phase.tasks.length;
+  const msg = taskCount > 0
+    ? `Delete the phase "${phase.label}" and all ${taskCount} task(s) in it? This cannot be undone.`
+    : `Delete the phase "${phase.label}"?`;
+  if (!(await appConfirm(msg))) return;
+
+  // Figure out the flattened index range this phase occupies, so we can
+  // correctly remove the matching entries from tx.checked and tx.subChecked.
+  let startIdx = 0;
+  for (let p = 0; p < pi; p++) startIdx += tx.phases[p].tasks.length;
+  const endIdx = startIdx + taskCount; // exclusive
+
+  tx.checked.splice(startIdx, taskCount);
+
+  if (tx.subChecked) {
+    const newSub = {};
+    Object.keys(tx.subChecked).forEach(k => {
+      const ki = parseInt(k);
+      if (ki < startIdx) newSub[ki] = tx.subChecked[ki];
+      else if (ki >= endIdx) newSub[ki - taskCount] = tx.subChecked[ki];
+      // entries within [startIdx, endIdx) belonged to the deleted phase — dropped
+    });
+    tx.subChecked = newSub;
+  }
+
+  tx.phases.splice(pi, 1);
+
+  saveTx();
+  renderChecklist();
+  showToast('Phase deleted.', 'success');
+}
+
+function recalcIndices() {
+  const tx = transactions[currentTxId];
+  let idx = 0;
+  tx.phases.forEach((phase, pi) => {
+    phase.tasks.forEach((task, ti) => {
+      const row = document.getElementById(`task-${pi}-${ti}`);
+      if (row) row.dataset.idx = idx;
+      idx++;
+    });
+  });
+}
+
+function toggleTask(pi, ti) {
+  const tx  = transactions[currentTxId];
+  const row = document.getElementById(`task-${pi}-${ti}`);
+  if (!row) return;
+  const idx = parseInt(row.dataset.idx);
+  const task = tx.phases[pi].tasks[ti];
+  const subItems = parseSubItems(task.sub);
+
+  tx.checked[idx] = !tx.checked[idx];
+  row.classList.toggle('done', tx.checked[idx]);
+  row.classList.remove('auto-done');
+  row.classList.remove('hidden-completed'); // un-hide if it was previously auto-hidden and got toggled again
+  cancelAutoHide(pi, ti);
+
+  // If this task has sub-items, manually checking/unchecking the main box
+  // also syncs all sub-item checkboxes to match
+  if (subItems.length > 0) {
+    if (!tx.subChecked) tx.subChecked = {};
+    tx.subChecked[idx] = subItems.map(() => tx.checked[idx]);
+    subItems.forEach((item, si) => {
+      const subRow = document.getElementById(`sub-${pi}-${ti}-${si}`);
+      if (subRow) subRow.classList.toggle('sub-done', tx.checked[idx]);
+    });
+  }
+
+  saveTx(); updateProgress();
+
+  if (tx.checked[idx]) {
+    scheduleAutoHide(pi, ti);
+  }
+  checkPhaseAutoCollapse(pi);
+}
+
+/* ── AUTO-HIDE COMPLETED TASKS (with 15s undo window) ── */
+const autoHideTimers = {}; // key: "pi-ti" -> timeout id
+
+function scheduleAutoHide(pi, ti) {
+  const key = pi + '-' + ti;
+  clearTimeout(autoHideTimers[key]);
+
+  showUndoToast(
+    'Task completed — hiding in 15s',
+    () => undoAutoHide(pi, ti)
+  );
+
+  autoHideTimers[key] = setTimeout(() => {
+    delete autoHideTimers[key];
+    const row = document.getElementById(`task-${pi}-${ti}`);
+    if (row && row.classList.contains('done')) {
+      row.classList.add('hidden-completed');
+      const subEl = document.getElementById(`subchecks-${pi}-${ti}`);
+      if (subEl) subEl.classList.add('hidden-completed');
+      checkPhaseAutoCollapse(pi);
+    }
+  }, 15000);
+}
+
+function cancelAutoHide(pi, ti) {
+  const key = pi + '-' + ti;
+  if (autoHideTimers[key]) {
+    clearTimeout(autoHideTimers[key]);
+    delete autoHideTimers[key];
+  }
+}
+
+function undoAutoHide(pi, ti) {
+  cancelAutoHide(pi, ti);
+  const tx = transactions[currentTxId];
+  const row = document.getElementById(`task-${pi}-${ti}`);
+  if (!row) return;
+  const idx = parseInt(row.dataset.idx);
+  tx.checked[idx] = false;
+  row.classList.remove('done', 'hidden-completed');
+  const task = tx.phases[pi].tasks[ti];
+  const subItems = parseSubItems(task.sub);
+  if (subItems.length > 0 && tx.subChecked) {
+    tx.subChecked[idx] = subItems.map(() => false);
+    subItems.forEach((item, si) => {
+      const subRow = document.getElementById(`sub-${pi}-${ti}-${si}`);
+      if (subRow) subRow.classList.remove('sub-done');
+    });
+    const subEl = document.getElementById(`subchecks-${pi}-${ti}`);
+    if (subEl) subEl.classList.remove('hidden-completed');
+  }
+  row.classList.remove('phase-collapsed');
+  const phaseBlock = row.closest('.phase-block');
+  if (phaseBlock) phaseBlock.classList.remove('phase-collapsed');
+  saveTx(); updateProgress();
+}
+
+/* Toast variant with an inline Undo button, separate from the plain showToast() */
+function showUndoToast(message, onUndo) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast undo-toast';
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = message;
+  const undoBtn = document.createElement('button');
+  undoBtn.className = 'undo-btn';
+  undoBtn.textContent = 'Undo';
+  undoBtn.onclick = () => {
+    onUndo();
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 200);
+  };
+  toast.appendChild(msgSpan);
+  toast.appendChild(undoBtn);
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 200);
+  }, 15000);
+}
+
+/* ── AUTO-COLLAPSE A PHASE ONCE EVERY TASK IN IT IS CHECKED AND HIDDEN ── */
+function checkPhaseAutoCollapse(pi) {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  const phaseBlock = document.querySelector(`.phase-block[data-pi="${pi}"]`);
+  if (!phaseBlock) return;
+  const rows = phaseBlock.querySelectorAll('.task-row');
+  if (rows.length === 0) return;
+  const allDone = Array.from(rows).every(r => r.classList.contains('done'));
+  if (allDone) {
+    phaseBlock.classList.add('phase-collapsed');
+  } else {
+    phaseBlock.classList.remove('phase-collapsed');
+  }
+}
+
+function togglePhaseCollapse(pi) {
+  const phaseBlock = document.querySelector(`.phase-block[data-pi="${pi}"]`);
+  if (phaseBlock) phaseBlock.classList.toggle('phase-collapsed');
+}
+
+function toggleSub(pi, ti, si) {
+  const tx  = transactions[currentTxId];
+  const row = document.getElementById(`task-${pi}-${ti}`);
+  if (!row) return;
+  const idx = parseInt(row.dataset.idx);
+  const task = tx.phases[pi].tasks[ti];
+  const subItems = parseSubItems(task.sub);
+
+  if (!tx.subChecked) tx.subChecked = {};
+  if (!tx.subChecked[idx]) tx.subChecked[idx] = subItems.map(() => false);
+
+  tx.subChecked[idx][si] = !tx.subChecked[idx][si];
+
+  // Update sub-row UI
+  const subRow = document.getElementById(`sub-${pi}-${ti}-${si}`);
+  if (subRow) subRow.classList.toggle('sub-done', tx.subChecked[idx][si]);
+
+  // Auto-check main task if all subs done
+  const allDone = tx.subChecked[idx].every(Boolean);
+  tx.checked[idx] = allDone;
+  row.classList.toggle('done', false);
+  row.classList.toggle('auto-done', allDone);
+
+  saveTx(); updateProgress();
+
+  if (allDone) {
+    scheduleAutoHide(pi, ti);
+  } else {
+    cancelAutoHide(pi, ti);
+    row.classList.remove('hidden-completed');
+  }
+  checkPhaseAutoCollapse(pi);
+}
+
+function updateProgress() {
+  const tx = transactions[currentTxId];
+  let total = 0, done = 0;
+  let gIdx = 0;
+  tx.phases.forEach(phase => {
+    phase.tasks.forEach(task => {
+      const subItems = parseSubItems(task.sub);
+      if (subItems.length > 0) {
+        // Count sub-items instead of the main task
+        const sc = (tx.subChecked && tx.subChecked[gIdx]) || subItems.map(() => false);
+        total += subItems.length;
+        done  += sc.filter(Boolean).length;
+      } else {
+        total += 1;
+        if (tx.checked[gIdx]) done += 1;
+      }
+      gIdx++;
+    });
+  });
+  const pct   = total ? Math.round((done/total)*100) : 0;
+  const bar   = document.getElementById('prog-bar');
+  const lbl   = document.getElementById('prog-label');
+  const pctEl = document.getElementById('prog-pct');
+  if (bar)   bar.style.width   = pct + '%';
+  if (lbl)   lbl.textContent   = `${done} of ${total} complete`;
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+async function resetCurrent() {
+  if (!(await appConfirm('Reset all checkboxes for this transaction?'))) return;
+  const tx = transactions[currentTxId];
+  tx.checked = tx.checked.map(() => false);
+  // Reset all sub-checks
+  if (tx.subChecked) {
+    Object.keys(tx.subChecked).forEach(k => {
+      tx.subChecked[k] = tx.subChecked[k].map(() => false);
+    });
+  }
+  saveTx(); renderChecklist();
+}
+
+function openEditTask(pi, ti) {
+  closeAllEditForms();
+  const f = document.getElementById(`edit-form-${pi}-${ti}`);
+  if (f) {
+    f.classList.add('open');
+    setTimeout(() => livePreviewSubs(pi, ti), 0);
+  }
+}
+function closeEditTask(pi, ti) {
+  const f = document.getElementById(`edit-form-${pi}-${ti}`);
+  if (f) f.classList.remove('open');
+}
+function closeAllEditForms() {
+  document.querySelectorAll('.task-edit-form.open').forEach(f => f.classList.remove('open'));
+}
+function saveEditTask(pi, ti) {
+  const tx   = transactions[currentTxId];
+  const row  = document.getElementById(`task-${pi}-${ti}`);
+  const idx  = row ? parseInt(row.dataset.idx) : null;
+  const text = document.getElementById(`edit-text-${pi}-${ti}`).value.trim();
+  if (!text) { showToast('Task text cannot be empty.', 'error'); return; }
+  const newSub = document.getElementById(`edit-sub-${pi}-${ti}`).value.trim() || undefined;
+  tx.phases[pi].tasks[ti].text  = text;
+  tx.phases[pi].tasks[ti].sub   = newSub;
+  tx.phases[pi].tasks[ti].badge = document.getElementById(`edit-badge-${pi}-${ti}`).value.trim() || undefined;
+  // Save reminders
+  const remContainer = document.getElementById('edit-reminders-' + pi + '-' + ti);
+  if (remContainer) {
+    const remInputs = remContainer.querySelectorAll('input[type="date"]');
+    tx.phases[pi].tasks[ti].reminders = Array.from(remInputs).map(i => i.value).filter(Boolean);
+  }
+  // Save linked email
+  const linkedEl = document.getElementById('edit-linked-email-' + pi + '-' + ti);
+  tx.phases[pi].tasks[ti].linkedEmail = linkedEl ? linkedEl.value || undefined : undefined;
+  // Reset subChecked for this task since sub-items may have changed
+  if (idx !== null) {
+    if (!tx.subChecked) tx.subChecked = {};
+    const items = parseSubItems(newSub);
+    tx.subChecked[idx] = items.map(() => false);
+    tx.checked[idx] = false;
+  }
+  saveTx(); renderChecklist();
+}
+async function deleteTask(pi, ti) {
+  if (!(await appConfirm('Remove this task?'))) return;
+  const tx  = transactions[currentTxId];
+  const row = document.getElementById(`task-${pi}-${ti}`);
+  const idx = parseInt(row.dataset.idx);
+  tx.phases[pi].tasks.splice(ti, 1);
+  tx.checked.splice(idx, 1);
+  // Rebuild subChecked with shifted indices
+  if (tx.subChecked) {
+    const newSub = {};
+    Object.keys(tx.subChecked).forEach(k => {
+      const ki = parseInt(k);
+      if (ki < idx) newSub[ki] = tx.subChecked[ki];
+      else if (ki > idx) newSub[ki - 1] = tx.subChecked[ki];
+    });
+    tx.subChecked = newSub;
+  }
+  saveTx(); renderChecklist();
+}
+function quickAddTask(pi) {
+  const input = document.getElementById(`add-input-${pi}`);
+  const text  = input.value.trim();
+  if (!text) return;
+  const tx = transactions[currentTxId];
+
+  // Compute the correct flattened insertion index: end of phase pi's tasks
+  let insertIdx = 0;
+  for (let p = 0; p < pi; p++) insertIdx += tx.phases[p].tasks.length;
+  insertIdx += tx.phases[pi].tasks.length; // insert at the end of this phase's tasks
+
+  tx.phases[pi].tasks.push({ text });
+  tx.checked.splice(insertIdx, 0, false);
+
+  // Shift subChecked indices for all tasks at or after the insertion point
+  if (tx.subChecked) {
+    const newSub = {};
+    Object.keys(tx.subChecked).forEach(k => {
+      const ki = parseInt(k);
+      newSub[ki >= insertIdx ? ki + 1 : ki] = tx.subChecked[ki];
+    });
+    tx.subChecked = newSub;
+  }
+
+  saveTx(); renderChecklist();
+  setTimeout(() => { const el = document.getElementById(`add-input-${pi}`); if (el) { el.focus(); el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }}, 50);
+}
+function startPhaseRename(pi) {
+  const label = document.getElementById('phase-label-' + pi);
+  const input = document.getElementById('phase-label-input-' + pi);
+  const btn   = document.getElementById('phase-rename-btn-' + pi);
+  if (!label || !input) return;
+  label.style.display = 'none';
+  if (btn) btn.style.display = 'none';
+  input.style.display = 'inline-block';
+  input.focus();
+  input.select();
+}
+function savePhaseLabel(pi) {
+  const tx = transactions[currentTxId];
+  const input = document.getElementById('phase-label-input-' + pi);
+  if (!tx || !input) return;
+  const newLabel = input.value.trim();
+  if (newLabel) {
+    tx.phases[pi].label = newLabel;
+    saveTx();
+  }
+  renderChecklist();
+}
+function cancelPhaseLabel(pi) {
+  renderChecklist();
+}
+
+/* ── EMAILS VIEW ── */
+function fillTemplate(tplBody, tx) {
+  const p = tx.parties || {};
+  const d = tx.dates   || {};
+  const isBuyer = tx.type === 'buyer';
+
+  const upcoming = [
+    d.inspection ? `- Inspection contingency: ${fmtDate(d.inspection)}` : '',
+    d.appraisal  ? `- Appraisal contingency: ${fmtDate(d.appraisal)}`  : '',
+    d.loan       ? `- Loan contingency: ${fmtDate(d.loan)}`            : '',
+    d.coe        ? `- Close of escrow: ${fmtDate(d.coe)}`              : '',
+  ].filter(Boolean).join('\n');
+
+  return tplBody
+    .replace(/\{\{address\}\}/g,              tx.address || '')
+    .replace(/\{\{type_label\}\}/g,           isBuyer ? 'Buyer(s)' : 'Seller(s)')
+    .replace(/\{\{client\}\}/g,               p.client     || '')
+    .replace(/\{\{agent\}\}/g,                p.agent      || '')
+    .replace(/\{\{other_label\}\}/g,          isBuyer ? 'Listing agent' : "Buyer's agent")
+    .replace(/\{\{other_agent\}\}/g,          p.otherAgent || '')
+    .replace(/\{\{other_client\}\}/g,         p.otherClient || '')
+    .replace(/\{\{lender\}\}/g,               p.lender     || '')
+    .replace(/\{\{escrow\}\}/g,               p.escrow     || '')
+    .replace(/\{\{price\}\}/g,                p.price      || '')
+    .replace(/\{\{acceptance\}\}/g,           fmtDate(d.acceptance))
+    .replace(/\{\{emd_date\}\}/g,             fmtDate(d.emd))
+    .replace(/\{\{inspection_date\}\}/g,      fmtDate(d.inspection))
+    .replace(/\{\{appraisal_date\}\}/g,       fmtDate(d.appraisal))
+    .replace(/\{\{loan_date\}\}/g,            fmtDate(d.loan))
+    .replace(/\{\{insurance_date\}\}/g,       fmtDate(d.insurance))
+    .replace(/\{\{seller_disclosures_date\}\}/g, fmtDate(d.seller_disclosures))
+    .replace(/\{\{possession_date\}\}/g,      fmtDate(d.possession))
+    .replace(/\{\{coe\}\}/g,                  fmtDate(d.coe))
+    .replace(/\{\{upcoming_dates\}\}/g,       upcoming || 'No upcoming dates entered.');
+}
+
+/* List of every built-in placeholder key — used to detect which {{tokens}} in a
+   template are "custom" (typed freely by the user) vs. the recognized built-ins. */
+const BUILT_IN_PLACEHOLDER_KEYS = [
+  'address','type_label','client','agent','other_label','other_agent','other_client',
+  'lender','escrow','price','acceptance','emd_date','inspection_date','appraisal_date',
+  'loan_date','insurance_date','seller_disclosures_date','possession_date','coe',
+  'upcoming_dates','contingency_name','contingency_date',
+];
+
+/* Find every {{token}} in a string that ISN'T one of the built-ins above.
+   This is how custom placeholders are "discovered" just by typing {{anything}}
+   directly into an email template — no separate creation step needed. */
+function findCustomTokens(text) {
+  const found = new Set();
+  const re = /\{\{([a-zA-Z0-9_]+)\}\}/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    if (!BUILT_IN_PLACEHOLDER_KEYS.includes(m[1])) found.add(m[1]);
+  }
+  return Array.from(found);
+}
+
+/* Fill any custom (non-built-in) {{tokens}} using values stored per-transaction
+   in tx.customFields = { tokenName: 'value', ... }. Unset tokens are left blank
+   rather than left as literal "{{token}}" text in the sent email. */
+function fillCustomTokens(text, tx) {
+  const tokens = findCustomTokens(text);
+  if (tokens.length === 0) return text;
+  const fields = (tx && tx.customFields) || {};
+  let result = text;
+  tokens.forEach(token => {
+    const re = new RegExp('\\{\\{' + token + '\\}\\}', 'g');
+    result = result.replace(re, fields[token] || '');
+  });
+  return result;
+}
+
+
+function fillSubject(subj, tx, extra) {
+  extra = extra || {};
+  return subj
+    .replace(/\{\{address\}\}/g, tx.address || '')
+    .replace(/\{\{contingency_name\}\}/g, extra.contingencyName || '')
+    .replace(/\{\{contingency_date\}\}/g, extra.contingencyDate || '');
+}
+
+function addEmailTemplate() {
+  const key = 'custom-' + Date.now();
+  emailTemplates[key] = {
+    title: 'New template',
+    subject: '{{address}}',
+    body: 'Hi {{agent}},\n\nBest regards,\nSarah Chung\nCertified Transaction Coordinator | Compass\nDRE 01963579'
+  };
+  saveEtl();
+  renderEmails();
+  setTimeout(() => { editEmailTemplate(key); }, 100);
+}
+async function deleteEmailTemplate(key) {
+  if (!(await appConfirm('Delete this email template?'))) return;
+  delete emailTemplates[key];
+  saveEtl();
+  renderEmails();
+}
+
+function saveCustomFieldValue(token) {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  const el = document.getElementById('custom-field-' + token);
+  if (!el) return;
+  if (!tx.customFields) tx.customFields = {};
+  tx.customFields[token] = el.value;
+  saveTx();
+  // Re-render so the email previews below reflect the new value immediately
+  const cursorPos = el.selectionStart;
+  renderEmails();
+  const newEl = document.getElementById('custom-field-' + token);
+  if (newEl) { newEl.focus(); newEl.setSelectionRange(cursorPos, cursorPos); }
+}
+
+function openGmail(subject, body) {
+  const url = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(url, '_blank');
+}
+
+function sendLinkedEmail(pi, ti) {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  const task = tx.phases[pi].tasks[ti];
+  const key = task.linkedEmail;
+  const tpl = key ? emailTemplates[key] : null;
+  if (!tpl) { showToast('No email template linked to this task.', 'error'); return; }
+  const subject = fillCustomTokens(fillSubject(tpl.subject, tx), tx);
+  const body = htmlToPlainText(fillCustomTokens(fillTemplate(tpl.body, tx), tx));
+  openGmail(subject, body);
+}
+
+function renderEmails() {
+  const tx = transactions[currentTxId];
+  if (!tx) {
+    document.getElementById('emails-content').innerHTML = `
+      <div class="empty-state">
+        <strong>No transaction selected</strong>
+        Select a transaction from the dropdown above to view and send its emails.
+      </div>`;
+    return;
+  }
+  const d  = tx.dates || {};
+
+  const contingencies = [
+    { key: 'inspection', label: 'Inspection contingency', date: d.inspection },
+    { key: 'appraisal',  label: 'Appraisal contingency',  date: d.appraisal  },
+    { key: 'loan',       label: 'Loan contingency',        date: d.loan       },
+    { key: 'coe',        label: 'Close of escrow',         date: d.coe        },
+  ].filter(c => c.date);
+
+  const builtInKeys = ['intro','contingency','weekly','closing'];
+  const customEmailKeys = Object.keys(emailTemplates).filter(k => !builtInKeys.includes(k));
+  // Only include built-in defs that still exist (user may have deleted one)
+  const builtInDefs = [
+    { key: 'intro',       sub: 'Sent at opening of escrow' },
+    { key: 'contingency', sub: 'Select a deadline below', isContingency: true },
+    { key: 'weekly',      sub: 'Sent each week during escrow' },
+    { key: 'closing',     sub: 'Sent 1–2 weeks before COE' },
+  ]
+  .filter(d => emailTemplates[d.key])
+  .map(d => ({ ...d, title: emailTemplates[d.key].title || d.key }));
+  const emailDefs = [
+    ...builtInDefs,
+    ...customEmailKeys.map(k => ({ key: k, title: emailTemplates[k].title || k, sub: 'Custom template' })),
+  ];
+
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:13px;color:#666;">Click "Open in Gmail" to launch a pre-filled compose window. Type <code style="background:#ededea;padding:1px 5px;border-radius:4px;">{{anything}}</code> in a template body to create a custom fillable field.</div>
+    <button class="btn sm primary" onclick="addEmailTemplate()">+ New template</button>
+  </div>`;
+
+  // Scan every email template for custom (non-built-in) {{tokens}} and surface fillable inputs for this transaction
+  const allCustomTokens = new Set();
+  Object.values(emailTemplates).forEach(t => {
+    findCustomTokens(t.subject + ' ' + t.body).forEach(tok => allCustomTokens.add(tok));
+  });
+  if (allCustomTokens.size > 0) {
+    html += `<div class="card" style="background:#FAEEDA;border-color:#EF9F27;">
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Custom field values for this transaction</div>
+      <div style="font-size:13px;color:#666;margin-bottom:0.75rem;">These were detected from {{tokens}} typed in your email templates. Fill them in here — values are specific to this transaction.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${Array.from(allCustomTokens).map(tok => `<div class="field-group">
+          <label>{{${esc(tok)}}}</label>
+          <input type="text" id="custom-field-${esc(tok)}" value="${esc((tx.customFields||{})[tok]||'')}" oninput="saveCustomFieldValue('${esc(tok)}')" />
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  emailDefs.forEach(def => {
+    const tpl  = emailTemplates[def.key];
+    const subj = fillCustomTokens(fillSubject(tpl.subject, tx), tx);
+    const body = htmlToPlainText(fillCustomTokens(fillTemplate(tpl.body, tx), tx));
+
+    html += `<div class="email-card">
+      <div class="email-card-header">
+        <div><div class="email-card-title">${def.title}</div><div class="email-card-sub">${def.sub}</div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn sm" onclick="editEmailTemplate('${def.key}')">Edit template</button>
+          ${def.isContingency ? '' : `<button class="btn sm gmail primary" onclick="openGmail(${JSON.stringify(subj)}, document.getElementById('email-body-${def.key}').value)">Open in Gmail</button>`}
+        </div>
+      </div>`;
+
+    if (def.isContingency) {
+      if (contingencies.length === 0) {
+        html += `<div style="font-size:13px;color:#888;padding:8px 0;">No contingency dates entered yet. Add them in the Checklist tab under "Transaction details".</div>`;
+      } else {
+        html += `<div style="display:flex;flex-direction:column;gap:8px;">`;
+        contingencies.forEach(c => {
+          const cSubj = fillCustomTokens(fillSubject(tpl.subject, tx, { contingencyName: c.label, contingencyDate: fmtDate(c.date) }), tx);
+          const cBody = htmlToPlainText(fillCustomTokens(tpl.body
+            .replace(/\{\{agent\}\}/g, tx.parties?.agent || '')
+            .replace(/\{\{address\}\}/g, tx.address || '')
+            .replace(/\{\{contingency_name\}\}/g, c.label)
+            .replace(/\{\{contingency_date\}\}/g, fmtDate(c.date)), tx));
+          const days = daysUntil(c.date);
+          const urgent = days !== null && days <= (c.key==='inspection'?0:c.key==='loan'?1:7) && days >= 0;
+          html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:${urgent?'#FAEEDA':'#f9f8f5'};border:0.5px solid ${urgent?'#EF9F27':'#e5e4e0'};border-radius:8px;flex-wrap:wrap;gap:6px;">
+            <div>
+              <div style="font-size:13px;font-weight:500;color:#1a1a1a;">${c.label}</div>
+              <div style="font-size:12px;color:#888;">${fmtDate(c.date)}${days!==null ? (days===0?', <strong style="color:#BA7517">Due today</strong>':days>0?`, ${days} day${days===1?'':'s'} away`:'') : ''}</div>
+            </div>
+            <button class="btn sm gmail" onclick="openGmail(${JSON.stringify(cSubj)}, ${JSON.stringify(cBody)})">Open in Gmail</button>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+    } else {
+      html += `<div style="margin-bottom:8px;">
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px;">Preview / edit before sending</label>
+        <textarea id="email-body-${def.key}" style="font-size:12px;min-height:120px;">${esc(body)}</textarea>
+      </div>
+      <div style="font-size:12px;color:#888;">Subject: <strong>${esc(subj)}</strong></div>`;
+    }
+
+    html += `</div>`;
+
+    /* inline template edit form */
+    html += `<div class="email-card" id="email-edit-${def.key}" style="display:none;border-color:#378ADD;background:#f5faff;">
+      <div style="font-weight:500;font-size:14px;margin-bottom:0.75rem;">Edit template: ${def.title}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="field-group"><label>Template name</label><input type="text" id="etpl-title-${def.key}" value="${esc(tpl.title||def.title||'')}" /></div>
+        <div class="field-group"><label>Subject line</label><input type="text" id="etpl-subj-${def.key}" value="${esc(tpl.subject)}" /></div>
+        <div class="field-group">
+          <label>Body — use placeholders: <span class="var-pill">{{address}}</span><span class="var-pill">{{client}}</span><span class="var-pill">{{agent}}</span><span class="var-pill">{{lender}}</span><span class="var-pill">{{escrow}}</span><span class="var-pill">{{inspection_date}}</span><span class="var-pill">{{loan_date}}</span><span class="var-pill">{{appraisal_date}}</span><span class="var-pill">{{insurance_date}}</span><span class="var-pill">{{seller_disclosures_date}}</span><span class="var-pill">{{possession_date}}</span><span class="var-pill">{{coe}}</span><span class="var-pill">{{upcoming_dates}}</span></label>
+          <div class="rte-toolbar">
+            <button type="button" class="rte-btn" title="Bold" onmousedown="event.preventDefault()" onclick="rteFormat('etpl-body-${def.key}','bold')"><strong>B</strong></button>
+            <button type="button" class="rte-btn" title="Italic" onmousedown="event.preventDefault()" onclick="rteFormat('etpl-body-${def.key}','italic')"><em>I</em></button>
+            <button type="button" class="rte-btn" title="Underline" onmousedown="event.preventDefault()" onclick="rteFormat('etpl-body-${def.key}','underline')"><u>U</u></button>
+          </div>
+          <div id="etpl-body-${def.key}" class="rte-editor" contenteditable="true">${plainTextToEditorHtml(tpl.body)}</div>
+          <div class="rte-note">Formatting here is for your own reference. Gmail's compose window only accepts plain text, so bold/italic/underline will need to be re-applied inside Gmail before sending.</div>
+        </div>
+        <div style="display:flex;gap:6px;justify-content:space-between;flex-wrap:wrap;">
+          <div style="display:flex;gap:6px;">
+            <button class="btn sm danger" onclick="deleteEmailTemplate('${def.key}')">Delete template</button>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn sm" onclick="closeEmailEdit('${def.key}')">Cancel</button>
+            <button class="btn sm primary" onclick="saveEmailTemplate('${def.key}')">Save template</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  /* AI fill button */
+  html += `<div class="card" style="background:#f9f8f5;">
+    <div style="font-size:14px;font-weight:500;margin-bottom:4px;">AI-assisted fill <span style="font-size:11px;font-weight:400;color:#888;margin-left:6px;">optional</span></div>
+    <div style="font-size:13px;color:#666;margin-bottom:0.75rem;">Use AI to intelligently fill transaction details into your intro email template, then open in Gmail.</div>
+    <div style="margin-bottom:0.75rem;">
+      <label style="font-size:12px;color:#666;display:block;margin-bottom:3px;">Anthropic API key <span style="color:#aaa;">(only needed for this feature)</span></label>
+      <input type="password" id="api-key-email" placeholder="sk-ant-..." autocomplete="off" style="max-width:340px;height:32px;font-size:13px;" onchange="document.getElementById('api-key').value=this.value;saveApiKey()" value="${esc(settings.apiKey||'')}" />
+      <div style="font-size:11px;color:#aaa;margin-top:3px;">Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:#185FA5;">console.anthropic.com</a> — stored only in this browser</div>
+    </div>
+    <button class="btn primary" id="ai-fill-btn" onclick="aiFillIntro()">Generate intro email with AI</button>
+    <div id="ai-result" style="margin-top:1rem;display:none;">
+      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px;">AI-generated email — review before sending</label>
+      <textarea id="ai-email-body" style="font-size:12px;min-height:160px;"></textarea>
+      <div style="margin-top:8px;display:flex;gap:6px;">
+        <button class="btn primary" onclick="openGmailAI()">Open in Gmail</button>
+        <button class="btn" onclick="document.getElementById('ai-result').style.display='none'">Clear</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('emails-content').innerHTML = html;
+}
+
+function editEmailTemplate(key) {
+  document.querySelectorAll('[id^="email-edit-"]').forEach(el => el.style.display = 'none');
+  document.getElementById(`email-edit-${key}`).style.display = 'block';
+  document.getElementById(`email-edit-${key}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function closeEmailEdit(key) { document.getElementById(`email-edit-${key}`).style.display = 'none'; }
+function saveEmailTemplate(key) {
+  const titleEl = document.getElementById('etpl-title-' + key);
+  if (titleEl) emailTemplates[key].title = titleEl.value.trim() || emailTemplates[key].title;
+  emailTemplates[key].subject = document.getElementById('etpl-subj-' + key).value;
+  emailTemplates[key].body    = document.getElementById('etpl-body-' + key).innerHTML;
+  saveEtl(); closeEmailEdit(key); renderEmails();
+}
+
+/* Apply bold/italic/underline to the current text selection inside a
+   contenteditable email body box. Uses the browser's built-in rich-text
+   command — works the same way Gmail's own formatting buttons do internally. */
+function rteFormat(editorId, command) {
+  const editor = document.getElementById(editorId);
+  if (!editor) return;
+  editor.focus();
+  document.execCommand(command, false, null);
+}
+
+/* Strip HTML tags from a template body down to plain text (preserving line
+   breaks) for anywhere the email actually gets sent — Gmail's compose URL
+   only accepts plain text, so formatting can't travel with it. */
+/* Convert a plain-text body (using \n for line breaks) into safe HTML for the
+   contenteditable editor. Existing templates created before rich text support
+   stored plain text — this keeps them displaying correctly without data loss. */
+function plainTextToEditorHtml(text) {
+  if (!text) return '';
+  // If it already looks like HTML (has tags), leave it as-is
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  return esc(text).replace(/\n/g, '<br>');
+}
+
+function htmlToPlainText(html) {
+  // <div><br></div> is what Chrome produces for a blank line in contenteditable
+  // — convert it to an explicit blank line BEFORE stripping other tags
+  let processed = html
+    .replace(/<div><br\s*\/?><\/div>/gi, '\n\n')
+    .replace(/<div>/gi, '\n')
+    .replace(/<\/div>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<p>/gi, '')
+    .replace(/<\/p>/gi, '\n');
+  const div = document.createElement('div');
+  div.innerHTML = processed;
+  const text = div.textContent || div.innerText || '';
+  // Preserve spacing exactly as typed — do NOT collapse multiple blank lines
+  return text.trim();
+}
+async function resetEmailTemplate(key) {
+  if (!(await appConfirm('Reset this template to the default?'))) return;
+  emailTemplates[key] = deepClone(DEFAULT_EMAIL_TEMPLATES[key]);
+  saveEtl(); closeEmailEdit(key); renderEmails();
+}
+
+async function aiFillIntro() {
+  const apiKey = (document.getElementById('api-key-email')?.value || document.getElementById('api-key').value || '').trim();
+  if (!apiKey) { showToast('Please enter your Anthropic API key in the field above.', 'error'); return; }
+  const tx = transactions[currentTxId];
+  const p  = tx.parties || {};
+  const d  = tx.dates   || {};
+  const tpl = emailTemplates['intro'];
+
+  const btn = document.getElementById('ai-fill-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Generating...';
+
+  const prompt = `You are a certified transaction coordinator in Los Angeles, CA named Sarah Chung (DRE 01963579), Broker Associate at Compass.
+
+Using the canned email template below, fill in all the transaction details and write a polished, professional intro email. Keep the structure and tone of the template but naturally incorporate all the transaction details. Do not add placeholder text for missing fields — simply omit them gracefully.
+
+TEMPLATE:
+${tpl.body}
+
+TRANSACTION DETAILS:
+Property: ${tx.address}
+Type: ${tx.type === 'buyer' ? 'Buyer' : 'Listing'}
+${tx.type === 'buyer' ? 'Buyer(s)' : 'Seller(s)'}: ${p.client || 'not provided'}
+Agent: ${p.agent || 'not provided'}
+${tx.type === 'buyer' ? 'Listing agent' : "Buyer's agent"}: ${p.otherAgent || 'not provided'}
+Purchase price: ${p.price || 'not provided'}
+Acceptance date: ${d.acceptance ? fmtDate(d.acceptance) : 'not provided'}
+Inspection contingency: ${d.inspection ? fmtDate(d.inspection) : 'not provided'}
+Appraisal contingency: ${d.appraisal ? fmtDate(d.appraisal) : 'not provided'}
+Loan contingency: ${d.loan ? fmtDate(d.loan) : 'not provided'}
+Close of escrow: ${d.coe ? fmtDate(d.coe) : 'not provided'}
+
+Return only the finished email body, no preamble.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b => b.text||'').join('') || '';
+    document.getElementById('ai-email-body').value = text;
+    document.getElementById('ai-result').style.display = 'block';
+  } catch(e) {
+    showToast('Error generating email. Please check your API key and try again.', 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Generate intro email with AI';
+}
+
+function openGmailAI() {
+  const tx   = transactions[currentTxId];
+  const subj = fillSubject(emailTemplates['intro'].subject, tx);
+  const body = document.getElementById('ai-email-body').value;
+  openGmail(subj, body);
+}
+
+/* ── TEMPLATE EDITOR ── */
+function showTplTab(tab) {
+  currentTplTab = tab;
+  document.getElementById('tpl-buyer-tab').classList.toggle('active', tab === 'buyer');
+  document.getElementById('tpl-listing-tab').classList.toggle('active', tab === 'listing');
+  renderTemplate(tab);
+}
+
+function renderTemplate(tab) {
+  const phases  = template[tab];
+  const content = document.getElementById('tpl-content');
+  let html = '';
+
+  phases.forEach((phase, pi) => {
+    html += `<div class="tpl-phase" data-pi="${pi}">
+      <div class="tpl-phase-header">
+        <div class="tpl-phase-name" id="tpl-phase-name-${pi}">${esc(phase.label)}</div>
+        <input type="text" id="tpl-phase-name-input-${pi}" value="${esc(phase.label)}" style="display:none;font-size:13px;font-weight:500;height:28px;flex:1;max-width:280px;" onkeydown="if(event.key==='Enter')tplSavePhaseLabel('${tab}',${pi});if(event.key==='Escape')renderTemplate('${tab}')" onblur="tplSavePhaseLabel('${tab}',${pi})" />
+        <div class="tpl-actions">
+          <button class="btn ghost sm" onclick="tplStartPhaseRename(${pi})">Rename</button>
+          <button class="btn sm danger" onclick="tplDeletePhase('${tab}',${pi})">Delete phase</button>
+        </div>
+      </div>`;
+    phase.tasks.forEach((task, ti) => {
+      html += `<div class="tpl-task-row" id="tpl-task-${pi}-${ti}"
+        draggable="true"
+        ondragstart="onDragStartTpl(event,'${tab}',${pi},${ti})"
+        ondragover="onDragOverTpl(event)"
+        ondrop="onDropTpl(event,'${tab}',${pi},${ti})"
+        style="cursor:default;">
+        <div class="drag-handle" title="Drag to reorder">⠿</div>
+        <div class="tpl-task-text">
+          ${esc(task.text)}
+          ${task.sub   ? `<div class="tpl-task-sub">${esc(task.sub)}</div>` : ''}
+          ${task.badge ? `<span class="task-badge" style="display:inline-block;margin-top:3px;">${esc(task.badge)}</span>` : ''}
+          ${task.linkedEmail && emailTemplates[task.linkedEmail] ? `<span class="task-email-badge" style="display:inline-block;margin-top:3px;cursor:default;">✉ ${esc(emailTemplates[task.linkedEmail].title||task.linkedEmail)}</span>` : ''}
+        </div>
+        <div class="tpl-actions">
+          <button class="btn ghost sm" onclick="tplEditTask('${tab}',${pi},${ti})">Edit</button>
+          <button class="btn sm danger" onclick="tplDeleteTask('${tab}',${pi},${ti})">Remove</button>
+        </div>
+      </div>
+      <div class="tpl-edit-form" id="tpl-edit-${pi}-${ti}">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="field-group"><label>Task text</label><textarea id="tpl-text-${pi}-${ti}" rows="2">${esc(task.text)}</textarea></div>
+          <div class="field-group">
+            <label>Sub-items (optional) — press <strong>Enter</strong> after each item to add another checkbox</label>
+            <textarea id="tpl-sub-${pi}-${ti}" rows="3" placeholder="Step one&#10;Step two" style="font-size:13px;min-height:70px;">${esc(task.sub||'')}</textarea>
+          </div>
+          <div class="field-group"><label>Badge (optional)</label><input type="text" id="tpl-badge-${pi}-${ti}" value="${esc(task.badge||'')}" style="max-width:180px;" /></div>
+          <div class="field-group">
+            <label>Link an email to this task — adds a quick-send button to every new transaction</label>
+            <select id="tpl-linked-email-${pi}-${ti}">
+              <option value="">No email linked</option>
+              ${Object.keys(emailTemplates).map(k => `<option value="${k}" ${task.linkedEmail===k?'selected':''}>${esc(emailTemplates[k].title||k)}</option>`).join('')}
+            </select>
+            <div style="font-size:11px;color:#aaa;margin-top:2px;">Go to the Emails tab to create or edit templates first.</div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn sm" onclick="tplCloseEdit(${pi},${ti})">Cancel</button>
+          <button class="btn sm primary" onclick="tplSaveTask('${tab}',${pi},${ti})">Save</button>
+        </div>
+      </div>`;
+    });
+    html += `<div class="tpl-add-row">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="text" id="tpl-add-${pi}" placeholder="Add a task..." style="height:30px;font-size:13px;" onkeydown="if(event.key==='Enter')tplAddTask('${tab}',${pi})" />
+        <button class="btn sm primary" onclick="tplAddTask('${tab}',${pi})">Add</button>
+      </div>
+    </div></div>`;
+  });
+
+  html += `<div id="tpl-add-phase-form-${tab}" style="margin-top:0.5rem;">
+    <button class="btn" id="tpl-add-phase-btn-${tab}" onclick="tplShowAddPhase('${tab}')">+ Add phase</button>
+    <div id="tpl-add-phase-input-wrap-${tab}" style="display:none;gap:6px;align-items:center;">
+      <input type="text" id="tpl-add-phase-input-${tab}" placeholder="Phase name" style="height:32px;max-width:240px;display:inline-block;" onkeydown="if(event.key==='Enter')tplConfirmAddPhase('${tab}');if(event.key==='Escape')renderTemplate('${tab}')" />
+      <button class="btn sm primary" onclick="tplConfirmAddPhase('${tab}')">Add</button>
+      <button class="btn sm" onclick="renderTemplate('${tab}')">Cancel</button>
+    </div>
+  </div>`;
+  content.innerHTML = html;
+}
+
+function tplEditTask(tab, pi, ti) {
+  document.querySelectorAll('.tpl-edit-form.open').forEach(f => f.classList.remove('open'));
+  document.getElementById(`tpl-edit-${pi}-${ti}`).classList.add('open');
+}
+function tplCloseEdit(pi, ti) { document.getElementById(`tpl-edit-${pi}-${ti}`).classList.remove('open'); }
+function tplSaveTask(tab, pi, ti) {
+  const text = document.getElementById(`tpl-text-${pi}-${ti}`).value.trim();
+  if (!text) { showToast('Task text cannot be empty.', 'error'); return; }
+  template[tab][pi].tasks[ti].text  = text;
+  template[tab][pi].tasks[ti].sub   = document.getElementById(`tpl-sub-${pi}-${ti}`).value.trim()   || undefined;
+  template[tab][pi].tasks[ti].badge = document.getElementById(`tpl-badge-${pi}-${ti}`).value.trim() || undefined;
+  const linkedEl = document.getElementById(`tpl-linked-email-${pi}-${ti}`);
+  template[tab][pi].tasks[ti].linkedEmail = linkedEl ? (linkedEl.value || undefined) : undefined;
+  saveTpl(); renderTemplate(tab);
+}
+async function tplDeleteTask(tab, pi, ti) {
+  if (!(await appConfirm('Remove this task from the template?'))) return;
+  template[tab][pi].tasks.splice(ti, 1); saveTpl(); renderTemplate(tab);
+}
+function tplAddTask(tab, pi) {
+  const input = document.getElementById(`tpl-add-${pi}`);
+  const text  = input.value.trim();
+  if (!text) return;
+  template[tab][pi].tasks.push({ text }); saveTpl(); renderTemplate(tab);
+  setTimeout(() => { const el = document.getElementById(`tpl-add-${pi}`); if (el) el.focus(); }, 50);
+}
+function tplStartPhaseRename(pi) {
+  const label = document.getElementById('tpl-phase-name-' + pi);
+  const input = document.getElementById('tpl-phase-name-input-' + pi);
+  if (!label || !input) return;
+  label.style.display = 'none';
+  input.style.display = 'inline-block';
+  input.focus();
+  input.select();
+}
+function tplSavePhaseLabel(tab, pi) {
+  const input = document.getElementById('tpl-phase-name-input-' + pi);
+  if (!input) return;
+  const newLabel = input.value.trim();
+  if (newLabel) template[tab][pi].label = newLabel;
+  saveTpl(); renderTemplate(tab);
+}
+async function tplDeletePhase(tab, pi) {
+  if (!(await appConfirm('Delete this entire phase from the template?'))) return;
+  template[tab].splice(pi, 1); saveTpl(); renderTemplate(tab);
+}
+function tplShowAddPhase(tab) {
+  const btn = document.getElementById('tpl-add-phase-btn-' + tab);
+  const wrap = document.getElementById('tpl-add-phase-input-wrap-' + tab);
+  if (btn) btn.style.display = 'none';
+  if (wrap) { wrap.style.display = 'flex'; }
+  const input = document.getElementById('tpl-add-phase-input-' + tab);
+  if (input) input.focus();
+}
+function tplConfirmAddPhase(tab) {
+  const input = document.getElementById('tpl-add-phase-input-' + tab);
+  if (!input) return;
+  const label = input.value.trim();
+  if (label) {
+    template[tab].push({ label: label, tasks: [] });
+  }
+  renderTemplate(tab);
+}
+function saveTemplate() { saveTpl(); showToast('Template saved! New transactions will use this template.', 'success'); }
+
+/* ── TASK REMINDERS ── */
+function addTaskReminder(pi, ti) {
+  const container = document.getElementById('edit-reminders-' + pi + '-' + ti);
+  if (!container) return;
+  const ri = container.querySelectorAll('input[type="date"]').length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;margin-bottom:4px;align-items:center;';
+  div.id = 'rem-row-' + pi + '-' + ti + '-' + ri;
+  div.innerHTML = '<input type="date" style="flex:1;height:30px;font-size:12px;" id="edit-rem-' + pi + '-' + ti + '-' + ri + '" />' +
+    '<button class="btn sm danger" style="padding:0 8px;" onclick="removeTaskReminder(' + pi + ',' + ti + ',' + ri + ')">✕</button>';
+  container.appendChild(div);
+}
+function removeTaskReminder(pi, ti, ri) {
+  const el = document.getElementById('rem-row-' + pi + '-' + ti + '-' + ri);
+  if (el) el.remove();
+}
+
+/* ── LIVE SUB-ITEM PREVIEW ── */
+function livePreviewSubs(pi, ti) {
+  const textarea = document.getElementById(`edit-sub-${pi}-${ti}`);
+  const preview  = document.getElementById(`sub-preview-${pi}-${ti}`);
+  if (!textarea || !preview) return;
+
+  const lines = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+
+  if (lines.length === 0) {
+    preview.innerHTML = '';
+    return;
+  }
+
+  let html = `<div style="font-size:11px;color:#888;margin-bottom:5px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;">Preview</div>
+    <div style="background:#fafaf8;border:0.5px solid #e5e4e0;border-radius:8px;overflow:hidden;">`;
+
+  lines.forEach((line, i) => {
+    const isLast = i === lines.length - 1;
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;${isLast ? '' : 'border-bottom:0.5px solid #ededea;'}">
+      <div style="width:14px;height:14px;border-radius:3px;border:1.5px solid #c8c7c1;background:#fff;flex-shrink:0;"></div>
+      <div style="font-size:12px;color:#555;">${esc(line)}</div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  preview.innerHTML = html;
+}
+
+/* ── REMINDERS VIEW ── */
+function renderRemindersView() {
+  const tx = currentTxId ? transactions[currentTxId] : null;
+  const txCustom = tx ? (tx.customRems || []) : [];
+  const content = document.getElementById('reminders-content');
+
+  const reminderFormHTML = (scope, rem) => {
+    const id = rem ? rem.id : '';
+    const isEdit = !!rem;
+    const prefix = scope + (id ? '-' + id : '-new');
+    return `
+    <div style="display:flex;flex-direction:column;gap:10px;" id="rem-form-${prefix}">
+      <div class="field-group">
+        <label>Reminder title</label>
+        <input type="text" id="rf-title-${prefix}" value="${esc(rem ? rem.title : '')}" placeholder="e.g. Follow up with lender" />
+      </div>
+      <div class="field-group">
+        <label>Trigger date type</label>
+        <select id="rf-type-${prefix}" onchange="updateReminderForm('${prefix}')">
+          <option value="specific"        ${rem && rem.dateType==='specific'         ? 'selected':''}>Specific date</option>
+          <option value="before_coe"      ${rem && rem.dateType==='before_coe'       ? 'selected':''}>Days before COE</option>
+          <option value="after_coe"       ${rem && rem.dateType==='after_coe'        ? 'selected':''}>Days after COE</option>
+          <option value="after_acceptance" ${rem && rem.dateType==='after_acceptance' ? 'selected':''}>Days after acceptance date</option>
+        </select>
+      </div>
+      <div id="rf-date-wrap-${prefix}">
+        ${reminderDateFieldHTML(prefix, rem)}
+      </div>
+      <div class="field-group">
+        <label>Note (optional)</label>
+        <input type="text" id="rf-note-${prefix}" value="${esc(rem ? (rem.note||'') : '')}" placeholder="Any additional context..." />
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        ${isEdit ? `<button class="btn sm danger" onclick="deleteReminder('${scope}','${id}')">Delete</button>` : ''}
+        <button class="btn sm" onclick="closeReminderForm('${prefix}')">Cancel</button>
+        <button class="btn sm primary" onclick="saveReminder('${scope}','${prefix}','${id}')">Save reminder</button>
+      </div>
+    </div>`;
+  };
+
+  const reminderDateFieldHTML = (prefix, rem) => {
+    const type = rem ? rem.dateType : 'specific';
+    if (type === 'specific') {
+      return `<div class="field-group"><label>Date</label><input type="date" id="rf-dateval-${prefix}" value="${rem && rem.dateValue ? rem.dateValue : ''}" /></div>`;
+    } else if (type === 'before_coe') {
+      return `<div class="field-group"><label>Days before COE</label><input type="number" id="rf-days-${prefix}" value="${rem ? (rem.daysBefore||'') : ''}" min="0" max="90" placeholder="e.g. 7" style="max-width:120px;" /></div>`;
+    } else if (type === 'after_coe') {
+      return `<div class="field-group"><label>Days after COE</label><input type="number" id="rf-days-${prefix}" value="${rem ? (rem.daysAfter||'') : ''}" min="0" max="90" placeholder="e.g. 30" style="max-width:120px;" /></div>`;
+    } else {
+      return `<div class="field-group"><label>Days after acceptance date</label><input type="number" id="rf-days-${prefix}" value="${rem ? (rem.daysAfter||'') : ''}" min="0" max="90" placeholder="e.g. 3" style="max-width:120px;" /></div>`;
+    }
+  };
+
+  const remItemHTML = (rem, scope, tx) => {
+    const trigDate = tx ? resolveReminderDate(rem, tx) : (rem.dateType === 'specific' ? rem.dateValue : null);
+    const days = trigDate ? daysUntil(trigDate) : null;
+    const triggered = days !== null && days >= 0 && days <= 3;
+    const dateLabel = tx ? resolvedDateLabel(rem, tx) : (rem.dateType === 'specific' && rem.dateValue ? fmtDate(rem.dateValue) : typeLabel(rem));
+    return `<div class="rem-item${triggered ? ' triggered' : ''}">
+      <div class="rem-info">
+        <div class="rem-title">${esc(rem.title)}</div>
+        <div class="rem-meta">${dateLabel}${rem.note ? ' · ' + esc(rem.note) : ''}</div>
+      </div>
+      <div class="rem-actions">
+        <button class="btn ghost sm" onclick="openEditReminderForm('${scope}','${rem.id}')">Edit</button>
+        ${triggered ? `<button class="btn sm gmail" onclick="openGmailReminder(${JSON.stringify(rem).replace(/"/g,'&quot;')})">Open in Gmail</button>` : ''}
+      </div>
+    </div>
+    <div id="rem-edit-${scope}-${rem.id}" style="display:none;padding:12px;background:#f9f8f5;border:0.5px solid #dddcd6;border-radius:10px;margin-top:-6px;margin-bottom:8px;">
+      ${reminderFormHTML(scope, rem)}
+    </div>`;
+  };
+
+  function typeLabel(rem) {
+    if (rem.dateType === 'before_coe')       return `${rem.daysBefore} day${rem.daysBefore===1?'':'s'} before COE`;
+    if (rem.dateType === 'after_coe')        return `${rem.daysAfter}  day${rem.daysAfter===1?'':'s'}  after COE`;
+    if (rem.dateType === 'after_acceptance') return `${rem.daysAfter}  day${rem.daysAfter===1?'':'s'}  after acceptance`;
+    return 'Specific date';
+  }
+
+  let html = '';
+
+  // ── GLOBAL REMINDERS ──
+  html += `<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:15px;font-weight:500;">Global reminders</div>
+        <div style="font-size:13px;color:#888;margin-top:2px;">Show up across all transactions</div>
+      </div>
+      <button class="btn sm primary" onclick="openNewReminderForm('global')">+ Add reminder</button>
+    </div>`;
+
+  if (globalCustomRems.length === 0) {
+    html += `<div style="font-size:13px;color:#aaa;padding:8px 0;">No global reminders yet.</div>`;
+  } else {
+    html += `<div class="rem-list">`;
+    globalCustomRems.forEach(rem => { html += remItemHTML(rem, 'global', tx); });
+    html += `</div>`;
+  }
+
+  html += `<div id="new-rem-form-global" style="display:none;padding:12px;background:#f9f8f5;border:0.5px solid #dddcd6;border-radius:10px;margin-top:8px;">
+    ${reminderFormHTML('global', null)}
+  </div></div>`;
+
+  // ── TRANSACTION-SPECIFIC REMINDERS ──
+  if (tx) {
+    html += `<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:15px;font-weight:500;">Transaction reminders</div>
+          <div style="font-size:13px;color:#888;margin-top:2px;">${esc(tx.address)} only</div>
+        </div>
+        <button class="btn sm primary" onclick="openNewReminderForm('tx')">+ Add reminder</button>
+      </div>`;
+
+    if (txCustom.length === 0) {
+      html += `<div style="font-size:13px;color:#aaa;padding:8px 0;">No transaction-specific reminders yet.</div>`;
+    } else {
+      html += `<div class="rem-list">`;
+      txCustom.forEach(rem => { html += remItemHTML(rem, 'tx', tx); });
+      html += `</div>`;
+    }
+
+    html += `<div id="new-rem-form-tx" style="display:none;padding:12px;background:#f9f8f5;border:0.5px solid #dddcd6;border-radius:10px;margin-top:8px;">
+      ${reminderFormHTML('tx', null)}
+    </div></div>`;
+  } else {
+    html += `<div class="info-banner">Select a transaction to add transaction-specific reminders.</div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function updateReminderForm(prefix) {
+  const sel = document.getElementById(`rf-type-${prefix}`);
+  if (!sel) return;
+  const type = sel.value;
+  const wrap = document.getElementById(`rf-date-wrap-${prefix}`);
+  if (!wrap) return;
+  const fakeRem = { dateType: type, dateValue: '', daysBefore: '', daysAfter: '' };
+  const prefix2 = prefix;
+  if (type === 'specific') {
+    wrap.innerHTML = `<div class="field-group"><label>Date</label><input type="date" id="rf-dateval-${prefix2}" /></div>`;
+  } else if (type === 'before_coe') {
+    wrap.innerHTML = `<div class="field-group"><label>Days before COE</label><input type="number" id="rf-days-${prefix2}" min="0" max="90" placeholder="e.g. 7" style="max-width:120px;" /></div>`;
+  } else if (type === 'after_coe') {
+    wrap.innerHTML = `<div class="field-group"><label>Days after COE</label><input type="number" id="rf-days-${prefix2}" min="0" max="90" placeholder="e.g. 30" style="max-width:120px;" /></div>`;
+  } else {
+    wrap.innerHTML = `<div class="field-group"><label>Days after acceptance date</label><input type="number" id="rf-days-${prefix2}" min="0" max="90" placeholder="e.g. 3" style="max-width:120px;" /></div>`;
+  }
+}
+
+function openNewReminderForm(scope) {
+  document.getElementById(`new-rem-form-${scope}`).style.display = 'block';
+}
+
+function openEditReminderForm(scope, id) {
+  document.getElementById(`rem-edit-${scope}-${id}`).style.display = 'block';
+}
+
+function closeReminderForm(prefix) {
+  const newForm = document.getElementById(`new-rem-form-${prefix.split('-')[0]}`);
+  if (newForm) newForm.style.display = 'none';
+  const editForm = document.getElementById(`rem-edit-${prefix}`);
+  if (editForm) editForm.style.display = 'none';
+  renderRemindersView();
+}
+
+function saveReminder(scope, prefix, existingId) {
+  const title = (document.getElementById(`rf-title-${prefix}`)?.value || '').trim();
+  if (!title) { showToast('Please enter a reminder title.', 'error'); return; }
+  const dateType = document.getElementById(`rf-type-${prefix}`)?.value || 'specific';
+  const note = (document.getElementById(`rf-note-${prefix}`)?.value || '').trim();
+
+  const rem = { id: existingId || ('rem-' + Date.now()), title, dateType, note };
+
+  if (dateType === 'specific') {
+    rem.dateValue = document.getElementById(`rf-dateval-${prefix}`)?.value || '';
+  } else if (dateType === 'before_coe') {
+    rem.daysBefore = parseInt(document.getElementById(`rf-days-${prefix}`)?.value || '0') || 0;
+  } else {
+    rem.daysAfter = parseInt(document.getElementById(`rf-days-${prefix}`)?.value || '0') || 0;
+  }
+
+  if (scope === 'global') {
+    const idx = globalCustomRems.findIndex(r => r.id === existingId);
+    if (idx >= 0) globalCustomRems[idx] = rem; else globalCustomRems.push(rem);
+    saveCustomRems();
+  } else {
+    const tx = transactions[currentTxId];
+    if (!tx.customRems) tx.customRems = [];
+    const idx = tx.customRems.findIndex(r => r.id === existingId);
+    if (idx >= 0) tx.customRems[idx] = rem; else tx.customRems.push(rem);
+    saveTx();
+  }
+
+  checkReminders();
+  renderRemindersView();
+}
+
+async function deleteReminder(scope, id) {
+  if (!(await appConfirm('Delete this reminder?'))) return;
+  if (scope === 'global') {
+    globalCustomRems = globalCustomRems.filter(r => r.id !== id);
+    saveCustomRems();
+  } else {
+    const tx = transactions[currentTxId];
+    tx.customRems = (tx.customRems || []).filter(r => r.id !== id);
+    saveTx();
+  }
+  checkReminders();
+  renderRemindersView();
+}
+
+function openGmailReminder(rem) {
+  const tx = currentTxId ? transactions[currentTxId] : null;
+  const p  = tx ? (tx.parties || {}) : {};
+  const trigDate = tx ? resolveReminderDate(rem, tx) : (rem.dateValue || '');
+  const subject  = `Reminder: ${rem.title}${tx ? ' — ' + tx.address : ''}`;
+  const body = `Hi ${p.agent || ''},
+
+This is a reminder: ${rem.title}${tx ? ' for ' + tx.address : ''}.
+
+${rem.note ? 'Note: ' + rem.note + '\n\n' : ''}${trigDate ? 'Date: ' + fmtDate(trigDate) + '\n\n' : ''}Please let me know if you have any questions.
+
+Best regards,
+Sarah Chung
+Certified Transaction Coordinator | Compass
+DRE 01963579`;
+  openGmail(subject, body);
+}
+
+/* ── GENERAL NOTES ── */
+function renderNotes() {
+  const el = document.getElementById('notes-content');
+  el.innerHTML = `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+        <div>
+          <div style="font-size:15px;font-weight:500;">General notes</div>
+          <div style="font-size:13px;color:#888;margin-top:2px;">Freeform notes, reminders, or anything you want to keep handy</div>
+        </div>
+        <span id="notes-saved-msg" style="font-size:12px;color:#1D9E75;display:none;">Saved</span>
+      </div>
+      <textarea id="notes-textarea" style="width:100%;min-height:320px;font-size:14px;line-height:1.8;border:0.5px solid #c8c7c1;border-radius:8px;padding:12px;font-family:inherit;resize:vertical;" placeholder="• Type your notes here&#10;• Each line is a new bullet point&#10;• Press Enter to start a new line">${esc(generalNotes)}</textarea>
+    </div>`;
+  const ta = document.getElementById('notes-textarea');
+  ta.addEventListener('input', () => {
+    generalNotes = ta.value;
+    saveNotes();
+    const msg = document.getElementById('notes-saved-msg');
+    if (msg) { msg.style.display = 'inline'; clearTimeout(ta._saveTimer); ta._saveTimer = setTimeout(() => msg.style.display = 'none', 1500); }
+  });
+}
+
+/* ── SETTINGS VIEW ── */
+function renderSettings() {
+  const content = document.getElementById('settings-content');
+  const dayOptions = [
+    { v: 0, l: 'Day of' },
+    { v: 1, l: '1 day before' },
+    { v: 2, l: '2 days before' },
+    { v: 3, l: '3 days before' },
+    { v: 5, l: '5 days before' },
+    { v: 7, l: '7 days before' },
+    { v: 10, l: '10 days before' },
+    { v: 14, l: '14 days before' },
+  ];
+
+  function optionsHTML(selectedVal) {
+    return dayOptions.map(o =>
+      `<option value="${o.v}" ${o.v === selectedVal ? 'selected' : ''}>${o.l}</option>`
+    ).join('');
+  }
+
+  let html = `
+    <div class="card">
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px;">Global reminder defaults</div>
+      <div style="font-size:13px;color:#666;margin-bottom:1rem;">These apply to all transactions unless overridden individually in the transaction's details panel.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${allContingencies().map(c => {
+          const rawVal = globalReminders[c.key] !== undefined ? globalReminders[c.key] : [c.defaultDaysBefore];
+          const vals = Array.isArray(rawVal) ? rawVal : [rawVal];
+          return `<div class="field-group">
+            <label>${esc(c.label)}</label>
+            <div id="gs-rem-container-${c.key}">
+              ${vals.map((v,i) => `<div style="display:flex;gap:4px;margin-bottom:4px;">
+                <select style="flex:1;">${optionsHTML(v)}</select>
+                ${vals.length > 1 ? `<button class="btn sm danger" style="padding:0 8px;" onclick="removeGlobalReminder('${c.key}',${i})">✕</button>` : ''}
+              </div>`).join('')}
+            </div>
+            <button class="btn ghost sm" style="margin-top:2px;font-size:11px;" onclick="addGlobalReminder('${c.key}')">+ Add reminder</button>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
+        <button class="btn primary" onclick="saveGlobalReminders()">Save defaults</button>
+        <button class="btn" onclick="resetGlobalReminders()">Reset to original</button>
+        <span id="gs-saved-msg" style="font-size:12px;color:#1D9E75;display:none;">Saved!</span>
+      </div>
+    </div>
+
+    <div class="card" style="background:#f9f8f5;">
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px;">How reminders work</div>
+      <div style="font-size:13px;color:#666;line-height:1.7;">
+        When you open a transaction, an amber banner appears at the top if any contingency deadline is within the reminder window you set.<br><br>
+        To override the timing for a specific transaction, go to that transaction's <strong>Checklist</strong> tab and adjust the "Reminder timing" dropdowns in the Transaction details panel, then hit <strong>Save details</strong>.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:15px;font-weight:500;">Custom contingencies</div>
+          <div style="font-size:13px;color:#888;margin-top:2px;">Add extra contingency types beyond the four built-in ones</div>
+        </div>
+        <button class="btn sm primary" onclick="openAddContingency()">+ Add contingency</button>
+      </div>
+      <div id="contingency-add-form" style="display:none;margin-bottom:1rem;padding:12px;background:#f9f8f5;border:0.5px solid #dddcd6;border-radius:10px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="field-group">
+            <label>Contingency name</label>
+            <input type="text" id="new-cont-label" placeholder="e.g. HOA document contingency" onkeydown="if(event.key==='Enter')addContingency()" />
+          </div>
+          <div class="field-group" style="max-width:200px;">
+            <label>Default reminder (days before)</label>
+            <select id="new-cont-days">
+              <option value="0">Day of</option>
+              <option value="1">1 day before</option>
+              <option value="2">2 days before</option>
+              <option value="3" selected>3 days before</option>
+              <option value="5">5 days before</option>
+              <option value="7">7 days before</option>
+              <option value="10">10 days before</option>
+              <option value="14">14 days before</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn sm primary" onclick="addContingency()">Add</button>
+            <button class="btn sm" onclick="document.getElementById('contingency-add-form').style.display='none'">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:10px;">Built-in: EMD, Inspection, Appraisal, Loan, Insurance, Seller Disclosures, COE — these cannot be removed.</div>
+      <div id="contingency-list">
+        ${customContingencies.length === 0
+          ? '<div style="font-size:13px;color:#aaa;padding:4px 0;">No custom contingencies added yet.</div>'
+          : customContingencies.map(c => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border:0.5px solid #dddcd6;border-radius:8px;margin-bottom:6px;">
+              <div>
+                <div style="font-size:14px;font-weight:500;">${esc(c.label)}</div>
+                <div style="font-size:12px;color:#888;">Default reminder: ${c.defaultDaysBefore === 0 ? 'day of' : c.defaultDaysBefore + ' days before'}</div>
+              </div>
+              <button class="btn sm danger" onclick="deleteContingency('${c.id}')">Delete</button>
+            </div>`).join('')
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:15px;font-weight:500;">Agents</div>
+          <div style="font-size:13px;color:#888;margin-top:2px;">Add agents to categorize transactions in the dropdown</div>
+        </div>
+        <button class="btn sm primary" onclick="openAddAgent()">+ Add agent</button>
+      </div>
+      <div id="agent-add-form" style="display:none;margin-bottom:1rem;padding:12px;background:#f9f8f5;border:0.5px solid #dddcd6;border-radius:10px;">
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div class="field-group" style="flex:1;min-width:160px;">
+            <label>Agent name</label>
+            <input type="text" id="new-agent-name" placeholder="e.g. Sarah Chung" onkeydown="if(event.key==='Enter')addAgent()" />
+          </div>
+          <button class="btn sm primary" onclick="addAgent()">Add</button>
+          <button class="btn sm" onclick="document.getElementById('agent-add-form').style.display='none'">Cancel</button>
+        </div>
+      </div>
+      <div id="agent-list">
+        ${agents.length === 0
+          ? '<div style="font-size:13px;color:#aaa;padding:4px 0;">No agents added yet.</div>'
+          : agents.map(a => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border:0.5px solid #dddcd6;border-radius:8px;margin-bottom:6px;">
+              <div style="font-size:14px;font-weight:500;">${esc(a.name)}</div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div style="font-size:12px;color:#888;">${Object.values(transactions).filter(t=>t.agentId===a.id).length} transaction(s)</div>
+                <button class="btn sm danger" onclick="deleteAgent('${a.id}')">Delete</button>
+              </div>
+            </div>`).join('')
+        }
+      </div>
+    </div>`;
+
+  content.innerHTML = html;
+}
+
+function openAddContingency() {
+  document.getElementById('contingency-add-form').style.display = 'block';
+  document.getElementById('new-cont-label').focus();
+}
+
+function addContingency() {
+  const label = document.getElementById('new-cont-label').value.trim();
+  if (!label) { showToast('Please enter a contingency name.', 'error'); return; }
+  if (customContingencies.find(c => c.label.toLowerCase() === label.toLowerCase())) {
+    showToast('A contingency with that name already exists.', 'error'); return;
+  }
+  const days = parseInt(document.getElementById('new-cont-days').value) || 3;
+  const id = 'cont-' + Date.now();
+  customContingencies.push({ id, label, defaultDaysBefore: days });
+  saveContingencies();
+  document.getElementById('new-cont-label').value = '';
+  document.getElementById('contingency-add-form').style.display = 'none';
+  renderSettings();
+}
+
+async function deleteContingency(id) {
+  const cont = customContingencies.find(c => c.id === id);
+  if (!(await appConfirm('Delete contingency "' + cont.label + '"? Any dates entered for this contingency in existing transactions will be lost.'))) return;
+  customContingencies = customContingencies.filter(c => c.id !== id);
+  saveContingencies();
+  renderSettings();
+  if (currentTxId) renderChecklist();
+}
+
+function openAddAgent() {
+  document.getElementById('agent-add-form').style.display = 'block';
+  document.getElementById('new-agent-name').focus();
+}
+
+function addAgent() {
+  const name = document.getElementById('new-agent-name').value.trim();
+  if (!name) { showToast('Please enter an agent name.', 'error'); return; }
+  if (agents.find(a => a.name.toLowerCase() === name.toLowerCase())) {
+    showToast('An agent with that name already exists.', 'error'); return;
+  }
+  agents.push({ id: 'agent-' + Date.now(), name });
+  saveAgents();
+  rebuildSelect();
+  renderSettings();
+}
+
+async function deleteAgent(id) {
+  const agent = agents.find(a => a.id === id);
+  const txCount = Object.values(transactions).filter(t => t.agentId === id).length;
+  const msgText = txCount > 0
+    ? 'Delete "' + agent.name + '"? This agent has ' + txCount + ' transaction(s) and will become unassigned.'
+    : 'Delete "' + agent.name + '"?';
+  if (!(await appConfirm(msgText))) return;
+  agents = agents.filter(a => a.id !== id);
+  Object.values(transactions).forEach(tx => { if (tx.agentId === id) tx.agentId = ''; });
+  saveAgents(); saveTx();
+  rebuildSelect();
+  renderSettings();
+}
+
+function saveGlobalReminders() {
+  allContingencies().forEach(c => {
+    const container = document.getElementById('gs-rem-container-' + c.key);
+    if (!container) return;
+    const vals = Array.from(container.querySelectorAll('select'))
+      .map(s => parseInt(s.value))
+      .filter(v => !isNaN(v));
+    globalReminders[c.key] = vals.length ? vals : [c.defaultDaysBefore];
+  });
+  saveRem();
+  checkReminders();
+  const msg = document.getElementById('gs-saved-msg');
+  if (msg) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 2000); }
+}
+
+function addGlobalReminder(key) {
+  saveGlobalReminders();
+  if (!Array.isArray(globalReminders[key])) globalReminders[key] = [globalReminders[key]];
+  globalReminders[key].push(3);
+  saveRem();
+  renderSettings();
+}
+function removeGlobalReminder(key, idx) {
+  saveGlobalReminders();
+  if (Array.isArray(globalReminders[key]) && globalReminders[key].length > 1) {
+    globalReminders[key].splice(idx, 1);
+    saveRem();
+    renderSettings();
+  }
+}
+async function resetGlobalReminders() {
+  if (!(await appConfirm('Reset all reminder defaults to the original settings?'))) return;
+  globalReminders = deepClone(DEFAULT_REMINDERS);
+  saveRem();
+  renderSettings();
+  if (currentTxId) checkReminders();
+}
+
+/* ── AUTH FLOW ── */
+let authMode = 'login';
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('auth-tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('auth-tab-signup').classList.toggle('active', mode === 'signup');
+  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Log in' : 'Sign up';
+  document.getElementById('auth-forgot-wrap').style.display = mode === 'login' ? 'block' : 'none';
+  hideAuthMessages();
+}
+
+function hideAuthMessages() {
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-info').style.display = 'none';
+}
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('auth-info').style.display = 'none';
+}
+function showAuthInfo(msg) {
+  const el = document.getElementById('auth-info');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+async function submitAuth() {
+  hideAuthMessages();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showAuthError('Please enter both email and password.'); return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+
+  const btn = document.getElementById('auth-submit-btn');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = authMode === 'login' ? 'Logging in...' : 'Signing up...';
+
+  try {
+    if (authMode === 'login') {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await handleLoginSuccess(data.user);
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      if (data.session) {
+        await handleLoginSuccess(data.user);
+      } else {
+        showAuthInfo('Check your email for a confirmation link, then come back and log in.');
+        switchAuthTab('login');
+      }
+    }
+  } catch (e) {
+    showAuthError(e.message || 'Something went wrong. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+async function sendPasswordReset() {
+  hideAuthMessages();
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { showAuthError('Enter your email above first, then click "Forgot password?".'); return; }
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+    if (error) throw error;
+    showAuthInfo('Password reset email sent. Check your inbox.');
+  } catch (e) {
+    showAuthError(e.message || 'Could not send reset email.');
+  }
+}
+
+let reminderPollInterval = null;
+let dismissedReminders = {}; // { key: dateString } — persisted to Supabase
+
+async function handleLoginSuccess(user) {
+  currentUser = user;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-root').style.display = 'block';
+  await loadStorage();
+  rebuildSelect();
+  // Start polling for reminders every 60 seconds across all transactions
+  clearInterval(reminderPollInterval);
+  checkReminders();
+  reminderPollInterval = setInterval(checkReminders, 60000);
+}
+
+async function logOut() {
+  if (!(await appConfirm('Log out? Your data is saved to your account and will be here when you log back in.'))) return;
+  await sb.auth.signOut();
+  clearInterval(reminderPollInterval);
+  reminderPollInterval = null;
+  currentUser = null;
+  cloudLoaded = false;
+  transactions = {};
+  template = { buyer: deepClone(DEFAULT_BUYER), listing: deepClone(DEFAULT_LISTING) };
+  emailTemplates = deepClone(DEFAULT_EMAIL_TEMPLATES);
+  settings = { apiKey: '', myEmail: '' };
+  globalReminders = deepClone(DEFAULT_REMINDERS);
+  globalCustomRems = [];
+  agents = [];
+  customContingencies = [];
+  generalNotes = '';
+  currentTxId = null;
+  document.getElementById('app-root').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+}
+
+/* ── INIT ── */
+(async function initAuth() {
+  switchAuthTab('login');
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && data.session.user) {
+    await handleLoginSuccess(data.session.user);
+  }
+})();
+</script>
+</div><!-- /app-root -->
+
+</body>
+</html>
