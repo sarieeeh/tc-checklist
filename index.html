@@ -519,8 +519,6 @@ const DEFAULT_BUYER = [
     { text: "Send AVID link via Glide for agent to fill out during inspections" },
     { text: "Email escrow, listing agent, and buyer(s) re: disclosures and reports", sub: "Email buyers - reports\nEmail listing agent / escrow - follow up\nEmail title / escrow - questions re: prelim\nEmail HOA - questions re: docs" },
     { text: "Send disclosures to buyer(s) for signatures", sub: "Go over disclosures if buyer(s) have questions" },
-    { text: "Send NHD report" },
-    { text: "Send Prelim Title report" },
     { text: "Send all HOA documents and contact info (if applicable)", sub: "Provide breakdown of all HOA documents", badge: "if HOA" },
     { text: "Send city report / 9A report" },
     { text: "Email listing agent once buyer has signed disclosures" },
@@ -554,7 +552,7 @@ const DEFAULT_BUYER = [
     { text: "Email escrow for closing documents" },
   ]},
   { label: "Phase 6 — File Completion", tasks: [
-    { text: "Fill in Commission Memo in Business Tracker (Compass)" },
+    { text: "Submit Commission Memo in Business Tracker (Compass)" },
     { text: "Store all transaction emails for compliance (agent's discretion)" },
     { text: "Send Google Drive link with all documents to client(s)" },
     { text: "Change CRM status on Compass", sub: "Change outreach interval to every 90 days\nUpdate client information" },
@@ -566,20 +564,17 @@ const DEFAULT_LISTING = [
   { label: "Phase 1 — Pre-Listing & Offer Stage", tasks: [
     { text: "Open file once RLA is received", sub: "Create Glide file\nInvite Compass Business Tracker\nUpload RLA to Business Tracker" },
     { text: "Send intro emails to sellers via Glide", sub: "Email seller(s) introduction\nSend disclosures for sellers to fill out via Glide" },
-    { text: "Input listing documents into Business Tracker (Compass)" },
-    { text: "Send disclosures link to seller(s) to fill out via Glide", sub: "Include CMA\nInclude MLS sheet\nFill out SFLS" },
+    { text: "Input listing documents into Business Tracker (Compass)", sub: "Include CMA\nInclude MLS sheet\nFill out SFLS" },
     { text: "Schedule retrofit inspection (city of LA) for Cert of Compliance" },
     { text: "Draft and send counter offers to agents as needed" },
     { text: "Once offer received: send counter offer to buyer(s) and RPA to sellers for full execution" },
   ]},
   { label: "Phase 2 — Escrow Opening", tasks: [
-    { text: "Pre-escrow: email escrow and title", sub: "Order NHD report and email escrow with seller's contacts\nEmail title for prelim title report and property profile\nIf HOA - email escrow property management contact to order HOA docs\nCheck if city report is required (9A / cert of compliance)" },
-    { text: "Pre-open escrow", sub: "Notify escrow to order city reports\nNotify title for property profile and prelim title report\nProvide HOA contact info to escrow for HOA docs" },
+    { text: "Pre-escrow: email escrow and title", sub: "Order NHD report and email escrow with seller's contacts\nEmail title for prelim title report and property profile\nIf HOA - email escrow property management contact to order HOA docs\nCheck if city report is required (9A / cert of compliance) and notify escrow to order" },
     { text: "Open escrow - send emails to all parties", sub: "Update Glide with dates\nSend open escrow email with all parties\nSet reminder dates for contingencies\nSend congratulations email to sellers\nSend intro email to buyer's agent/TC" },
     { text: "Send intro emails to seller(s), buyer's agent, and lender", sub: "Include all important dates and contact information" },
     { text: "Review with listing agent: key dates, contacts, milestones, and paperwork needed" },
     { text: "Open file on Business Tracker", sub: "Upload offer and counters" },
-    { text: "Order NHD and any other applicable reports" },
     { text: "Email escrow - confirm EMD received" },
   ]},
   { label: "Phase 3 — Disclosures & Inspections", tasks: [
@@ -588,8 +583,6 @@ const DEFAULT_LISTING = [
     { text: "Order retrofit / city inspection (city of LA)", sub: "Pasadena - order city inspection via city website\nAzusa - order via Community Improvement Division" },
     { text: "Email listing agent if appraiser has called" },
     { text: "If HOA, contact escrow for status of HOA docs", sub: "Send HOA documents to buyer's agent directly", badge: "if HOA" },
-    { text: "Send all disclosures to buyer's agent and TC", sub: "Include all HOA docs (if applicable)", badge: "if HOA" },
-    { text: "Send Homeowner's Guide to Earthquake Safety & Environmental Hazards booklet links" },
     { text: "Send all previous reports with RFR (Receipt for Reports) if needed" },
   ]},
   { label: "Phase 4 — Negotiations & Addendums", tasks: [
@@ -612,13 +605,12 @@ const DEFAULT_LISTING = [
     { text: "Schedule final walk-through", sub: "Schedule with agents\nEmail to confirm with buyer's agent\nConfirm staging is removed\nVerification of Property (VP) received?" },
     { text: "Email escrow - check on loan docs" },
     { text: "Email escrow re: closing funds", sub: "Buyer wired funds?\nLoan funded?" },
-    { text: "Coordinate final walk-through" },
     { text: "Send reminder to remove sign, change MLS status to closed, and remove lockboxes" },
     { text: "Email seller(s) - congratulations email" },
   ]},
   { label: "Phase 7 — File Completion", tasks: [
     { text: "Submit file to Business Tracker (Compass)" },
-    { text: "Fill in Commission Memo in Business Tracker (Compass)" },
+    { text: "Submit Commission Memo in Business Tracker (Compass)" },
     { text: "Store all transaction emails for compliance" },
     { text: "Audit file and email seller file", sub: "Upload documents in Business Tracker files\nCreate Google Drive folder for clients\nEmail seller Google Drive folder" },
     { text: "Send Google Drive link with all documents to client(s)" },
@@ -1999,8 +1991,6 @@ function taskRowHTML(pi, ti, idx, task, doneClass) {
   const subItems = parseSubItems(task.sub);
   const hasSubItems = subItems.length > 0;
   const subCheckedArr = (tx.subChecked && tx.subChecked[idx]) || subItems.map(() => false);
-  const allDone = hasSubItems && subCheckedArr.every(Boolean);
-  const autoDoneClass = allDone ? ' auto-done' : '';
 
   // Main task row checkbox is always clickable, independent of sub-items
   const cbClick = `onclick="toggleTask(${pi},${ti})"`;
@@ -2015,7 +2005,7 @@ function taskRowHTML(pi, ti, idx, task, doneClass) {
     ? `<button class="task-email-badge no-print" title="Open ${esc(linkedTpl.title||linkedKey)} in Gmail" onclick="event.stopPropagation();sendLinkedEmail(${pi},${ti})">✉ ${esc(linkedTpl.title||linkedKey)}</button>`
     : '';
 
-  let html = `<div class="task-row${doneClass}${autoDoneClass}" data-pi="${pi}" data-ti="${ti}" data-idx="${idx}" id="task-${pi}-${ti}"
+  let html = `<div class="task-row${doneClass}" data-pi="${pi}" data-ti="${ti}" data-idx="${idx}" id="task-${pi}-${ti}"
     draggable="true"
     ondragstart="onDragStart(event,${pi},${ti})"
     ondragend="onDragEnd(${pi},${ti})"
@@ -2447,21 +2437,9 @@ function toggleSub(pi, ti, si) {
   const subRow = document.getElementById(`sub-${pi}-${ti}-${si}`);
   if (subRow) subRow.classList.toggle('sub-done', tx.subChecked[idx][si]);
 
-  // Auto-check main task if all subs done
-  const allDone = tx.subChecked[idx].every(Boolean);
-  tx.checked[idx] = allDone;
-  row.classList.toggle('done', false);
-  row.classList.toggle('auto-done', allDone);
-
+  // Sub-items are tracked on their own; the main task is only checked by
+  // clicking its own checkbox.
   saveTx(); updateProgress();
-
-  if (allDone) {
-    scheduleAutoHide(pi, ti);
-  } else {
-    cancelAutoHide(pi, ti);
-    row.classList.remove('hidden-completed');
-  }
-  checkPhaseAutoCollapse(pi);
 }
 
 function updateProgress() {
