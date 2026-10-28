@@ -1991,8 +1991,6 @@ function taskRowHTML(pi, ti, idx, task, doneClass) {
   const subItems = parseSubItems(task.sub);
   const hasSubItems = subItems.length > 0;
   const subCheckedArr = (tx.subChecked && tx.subChecked[idx]) || subItems.map(() => false);
-  const allDone = hasSubItems && subCheckedArr.every(Boolean);
-  const autoDoneClass = allDone ? ' auto-done' : '';
 
   // Main task row checkbox is always clickable, independent of sub-items
   const cbClick = `onclick="toggleTask(${pi},${ti})"`;
@@ -2007,7 +2005,7 @@ function taskRowHTML(pi, ti, idx, task, doneClass) {
     ? `<button class="task-email-badge no-print" title="Open ${esc(linkedTpl.title||linkedKey)} in Gmail" onclick="event.stopPropagation();sendLinkedEmail(${pi},${ti})">✉ ${esc(linkedTpl.title||linkedKey)}</button>`
     : '';
 
-  let html = `<div class="task-row${doneClass}${autoDoneClass}" data-pi="${pi}" data-ti="${ti}" data-idx="${idx}" id="task-${pi}-${ti}"
+  let html = `<div class="task-row${doneClass}" data-pi="${pi}" data-ti="${ti}" data-idx="${idx}" id="task-${pi}-${ti}"
     draggable="true"
     ondragstart="onDragStart(event,${pi},${ti})"
     ondragend="onDragEnd(${pi},${ti})"
@@ -2439,21 +2437,9 @@ function toggleSub(pi, ti, si) {
   const subRow = document.getElementById(`sub-${pi}-${ti}-${si}`);
   if (subRow) subRow.classList.toggle('sub-done', tx.subChecked[idx][si]);
 
-  // Auto-check main task if all subs done
-  const allDone = tx.subChecked[idx].every(Boolean);
-  tx.checked[idx] = allDone;
-  row.classList.toggle('done', false);
-  row.classList.toggle('auto-done', allDone);
-
+  // Sub-items are tracked on their own; the main task is only checked by
+  // clicking its own checkbox.
   saveTx(); updateProgress();
-
-  if (allDone) {
-    scheduleAutoHide(pi, ti);
-  } else {
-    cancelAutoHide(pi, ti);
-    row.classList.remove('hidden-completed');
-  }
-  checkPhaseAutoCollapse(pi);
 }
 
 function updateProgress() {
