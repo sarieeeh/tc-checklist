@@ -964,47 +964,6 @@ function applyAppDataBlob(blob) {
   if (blob.dismissedReminders && typeof blob.dismissedReminders === 'object') dismissedReminders = blob.dismissedReminders;
 }
 
-/* One-time cleanup of duplicate steps in a saved template, matching the
-   2026-10 DEFAULT_BUYER / DEFAULT_LISTING cleanup. Only steps whose text
-   exactly matches the old defaults are touched. Returns true if anything ran. */
-function migrateTemplateDuplicates() {
-  if (settings.templateDedupe202610) return false;
-  const tasksOf = tab => (template[tab] || []).flatMap(p => p.tasks || []);
-  const removeExact = (tab, texts) => {
-    (template[tab] || []).forEach(p => {
-      if (p.tasks) p.tasks = p.tasks.filter(t => !texts.includes(t.text));
-    });
-  };
-  const rename = (tab, from, to) => {
-    tasksOf(tab).forEach(t => { if (t.text === from) t.text = to; });
-  };
-
-  removeExact('buyer', ["Send NHD report", "Send Prelim Title report"]);
-  rename('buyer', "Fill in Commission Memo in Business Tracker (Compass)", "Submit Commission Memo in Business Tracker (Compass)");
-
-  const listing    = tasksOf('listing');
-  const sellerLink = listing.find(t => t.text === "Send disclosures link to seller(s) to fill out via Glide");
-  const inputDocs  = listing.find(t => t.text === "Input listing documents into Business Tracker (Compass)");
-  if (sellerLink && inputDocs && sellerLink.sub && !inputDocs.sub) inputDocs.sub = sellerLink.sub;
-  const preEscrow = listing.find(t => t.text === "Pre-escrow: email escrow and title");
-  const cityLine  = "Check if city report is required (9A / cert of compliance)";
-  if (preEscrow && preEscrow.sub) {
-    preEscrow.sub = preEscrow.sub.split('\n').map(l => l === cityLine ? cityLine + " and notify escrow to order" : l).join('\n');
-  }
-  removeExact('listing', [
-    "Send disclosures link to seller(s) to fill out via Glide",
-    "Pre-open escrow",
-    "Order NHD and any other applicable reports",
-    "Send all disclosures to buyer's agent and TC",
-    "Send Homeowner's Guide to Earthquake Safety & Environmental Hazards booklet links",
-    "Coordinate final walk-through",
-  ]);
-  rename('listing', "Fill in Commission Memo in Business Tracker (Compass)", "Submit Commission Memo in Business Tracker (Compass)");
-
-  settings.templateDedupe202610 = true;
-  return true;
-}
-
 async function loadStorage() {
   if (!currentUser) return;
   setSyncStatus('Loading...');
@@ -1019,7 +978,6 @@ async function loadStorage() {
       applyAppDataBlob(data.data);
     }
     cloudLoaded = true;
-    if (migrateTemplateDuplicates()) cloudSaveDebounced();
     setSyncStatus('Synced');
     setTimeout(() => setSyncStatus(''), 2000);
   } catch (e) {
