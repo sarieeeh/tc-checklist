@@ -1249,11 +1249,11 @@ function loadTransaction(id) {
 function allContingencies() {
   const builtIn = [
     { key: 'emd',                label: 'EMD (Earnest Money Deposit)', defaultDaysBefore: 1 },
+    { key: 'seller_disclosures', label: 'Seller disclosures due',      defaultDaysBefore: 1 },
     { key: 'inspection',         label: 'Inspection contingency',      defaultDaysBefore: 0 },
+    { key: 'insurance',          label: 'Insurance contingency',       defaultDaysBefore: 1 },
     { key: 'appraisal',          label: 'Appraisal contingency',       defaultDaysBefore: 7 },
     { key: 'loan',               label: 'Loan contingency',            defaultDaysBefore: 1 },
-    { key: 'insurance',          label: 'Insurance contingency',       defaultDaysBefore: 1 },
-    { key: 'seller_disclosures', label: 'Seller disclosures due',      defaultDaysBefore: 1 },
     { key: 'coe',                label: 'Close of escrow',             defaultDaysBefore: 7 },
   ];
   const custom = customContingencies.map(c => ({
@@ -1524,9 +1524,9 @@ function builtinDateDefs() {
     { key: 'emd',                label: 'EMD' },
     { key: 'seller_disclosures', label: 'Disclosures due' },
     { key: 'inspection',         label: 'Inspection' },
+    { key: 'insurance',          label: 'Insurance' },
     { key: 'appraisal',          label: 'Appraisal' },
     { key: 'loan',               label: 'Loan' },
-    { key: 'insurance',          label: 'Insurance' },
     { key: 'coe',                label: 'COE' },
     { key: 'possession',         label: 'Possession' },
   ];
