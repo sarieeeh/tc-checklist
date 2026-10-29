@@ -107,6 +107,12 @@
     .date-field label { font-size: 12px; color: #666; }
     .date-field input { height: 32px; font-size: 13px; }
     .dates-title { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+    .details-subhead { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin: 1.25rem 0 0; }
+    .dates-list { display: flex; flex-direction: column; margin-top: 0.5rem; max-width: 520px; }
+    .date-row { display: grid; grid-template-columns: 1fr auto 160px; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 0.5px solid #ededea; }
+    .date-row:last-child { border-bottom: none; }
+    .date-row > label:first-child { font-size: 13px; color: #1a1a1a; }
+    .date-row input[type="date"] { height: 32px; font-size: 13px; }
 
     /* EMAILS VIEW */
     .email-card { background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
@@ -317,6 +323,7 @@
     @media (max-width: 540px) {
       .tx-row, .field-row { flex-direction: column; }
       .dates-grid { grid-template-columns: 1fr; }
+      .date-row { grid-template-columns: 1fr auto 140px; gap: 8px; }
     }
   </style>
 </head>
@@ -1806,6 +1813,7 @@ function renderChecklist() {
         </div>
       </div>
       <div id="details-body" class="collapse-body">
+      <div class="details-subhead" style="margin-top:0;">Parties &amp; price</div>
       <div class="dates-grid">
         <div class="date-field"><label>${tx.type==='buyer'?'Buyer(s)':'Seller(s)'}</label><input type="text" id="d-client" value="${esc(p.client||'')}" placeholder="Client name(s)" oninput="autoSaveDetails()" /></div>
         <div class="date-field"><label>${tx.type==='buyer'?"Buyer's agent":'Listing agent'}</label><input type="text" id="d-agent" value="${esc(p.agent||'')}" placeholder="Agent name" oninput="autoSaveDetails()" /></div>
@@ -1826,28 +1834,19 @@ function renderChecklist() {
             <option value="1" ${tx.cashOffer?'selected':''}>Cash offer</option>
           </select>
         </div>
-        <div class="date-field"><label>Acceptance date</label><input type="date" id="d-acceptance" value="${d.acceptance||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-field"><label>EMD (Earnest Money Deposit)</label><input type="date" id="d-emd" value="${d.emd||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-field"><label>Seller disclosures due</label><input type="date" id="d-seller_disclosures" value="${d.seller_disclosures||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-field"><label>Inspection contingency</label><input type="date" id="d-inspection" value="${d.inspection||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-field">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-            <label style="margin-bottom:0;">Appraisal contingency</label>
-            <label class="waive-check"><input type="checkbox" id="d-appraisal-waived" ${isWaived(tx,'appraisal')?'checked':''} onchange="toggleWaived('appraisal')" /> Waived</label>
-          </div>
-          <input type="date" id="d-appraisal" value="${d.appraisal||''}" ${isWaived(tx,'appraisal')?'disabled style="opacity:0.5;"':''} onchange="autoSaveDetails()" />
-        </div>
-        <div class="date-field">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-            <label style="margin-bottom:0;">Loan contingency</label>
-            <label class="waive-check"><input type="checkbox" id="d-loan-waived" ${isWaived(tx,'loan')?'checked':''} onchange="toggleWaived('loan')" /> Waived</label>
-          </div>
-          <input type="date" id="d-loan" value="${d.loan||''}" ${isWaived(tx,'loan')?'disabled style="opacity:0.5;"':''} onchange="autoSaveDetails()" />
-        </div>
-        <div class="date-field"><label>Insurance contingency</label><input type="date" id="d-insurance" value="${d.insurance||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-field"><label>Close of escrow (COE)</label><input type="date" id="d-coe" value="${d.coe||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-field"><label>Possession date</label><input type="date" id="d-possession" value="${d.possession||''}" onchange="autoSaveDetails()" /></div>
-        ${customContingencies.map(c => `<div class="date-field"><label>${esc(c.label)}</label><input type="date" id="d-${c.id}" value="${d[c.id]||''}" onchange="autoSaveDetails()" /></div>`).join('')}
+      </div>
+      <div class="details-subhead">Key dates</div>
+      <div class="dates-list">
+        <div class="date-row"><label for="d-acceptance">Acceptance</label><span></span><input type="date" id="d-acceptance" value="${d.acceptance||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-emd">EMD date</label><span></span><input type="date" id="d-emd" value="${d.emd||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-seller_disclosures">Seller disclosures</label><span></span><input type="date" id="d-seller_disclosures" value="${d.seller_disclosures||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-inspection">Inspection contingency</label><span></span><input type="date" id="d-inspection" value="${d.inspection||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-insurance">Insurance contingency</label><span></span><input type="date" id="d-insurance" value="${d.insurance||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-appraisal">Appraisal contingency</label><label class="waive-check"><input type="checkbox" id="d-appraisal-waived" ${isWaived(tx,'appraisal')?'checked':''} onchange="toggleWaived('appraisal')" /> Waived</label><input type="date" id="d-appraisal" value="${d.appraisal||''}" ${isWaived(tx,'appraisal')?'disabled style="opacity:0.5;"':''} onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-loan">Loan contingency</label><label class="waive-check"><input type="checkbox" id="d-loan-waived" ${isWaived(tx,'loan')?'checked':''} onchange="toggleWaived('loan')" /> Waived</label><input type="date" id="d-loan" value="${d.loan||''}" ${isWaived(tx,'loan')?'disabled style="opacity:0.5;"':''} onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-coe">Close of escrow</label><span></span><input type="date" id="d-coe" value="${d.coe||''}" onchange="autoSaveDetails()" /></div>
+        <div class="date-row"><label for="d-possession">Possession</label><span></span><input type="date" id="d-possession" value="${d.possession||''}" onchange="autoSaveDetails()" /></div>
+        ${customContingencies.map(c => `<div class="date-row"><label for="d-${c.id}">${esc(c.label)}</label><span></span><input type="date" id="d-${c.id}" value="${d[c.id]||''}" onchange="autoSaveDetails()" /></div>`).join('')}
       </div>
       </div><!-- /details-body -->
       <div style="border-top:0.5px solid #ededea;margin-top:1rem;padding-top:1rem;">
