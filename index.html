@@ -1946,6 +1946,52 @@ function refreshAgreedTerms() {
   const tx = transactions[currentTxId];
   const el = document.getElementById('agreed-terms');
   if (tx && el) el.innerHTML = agreedTermsHTML(tx);
+  const dl = document.getElementById('panel-dates');
+  if (tx && dl) dl.innerHTML = panelDatesHTML(tx);
+}
+
+/* ── DATES & DEADLINES (copy-ready list in the notes panel; Key dates stays the place to edit) ── */
+const PANEL_DATE_LABELS = {
+  acceptance: 'Acceptance date', emd: 'Earnest Money Deposit', seller_disclosures: 'Seller Disclosures',
+  inspection: 'Inspection Contingency', insurance: 'Insurance Contingency', appraisal: 'Appraisal Contingency',
+  loan: 'Loan Contingency', coe: 'Close of Escrow', possession: 'Possession',
+};
+function fmtSlashDate(val) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(val || '');
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : '';
+}
+/* "Label: MM/DD/YYYY" per line; blank dates are left out, waived ones say Waived */
+function panelDatesLines(tx) {
+  const d = tx.dates || {};
+  const lines = [];
+  allDateDefs().forEach(def => {
+    const label = PANEL_DATE_LABELS[def.key] || def.label;
+    if (WAIVABLE_KEYS.includes(def.key) && isWaived(tx, def.key)) { lines.push(label + ': Waived'); return; }
+    const v = fmtSlashDate(d[def.key]);
+    if (v) lines.push(label + ': ' + v);
+  });
+  return lines;
+}
+function panelDatesHTML(tx) {
+  const lines = panelDatesLines(tx);
+  return `<div class="terms-card">
+    <div class="terms-head">
+      <div class="terms-title">Dates & deadlines</div>
+      ${lines.length ? '<button class="btn sm" onclick="copyPanelDates()">⧉ Copy</button>' : ''}
+    </div>
+    ${lines.length
+      ? `<div style="font-size:13px;line-height:1.7;white-space:pre-line;user-select:text;">${esc(lines.join('\n'))}</div>`
+      : '<div style="font-size:12px;color:#aaa;">No dates yet. Enter them in Key dates.</div>'}
+  </div>`;
+}
+function copyPanelDates() {
+  const tx = currentTxId ? transactions[currentTxId] : null;
+  if (!tx) return;
+  const text = panelDatesLines(tx).join('\n');
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('Dates copied, ready to paste.', 'success'), () => fallbackCopy(text));
+  } else fallbackCopy(text);
 }
 function addAgreedTerm() {
   const tx = transactions[currentTxId];
@@ -2461,6 +2507,7 @@ function renderChecklist() {
         <span id="tx-notes-saved-msg" style="font-size:12px;color:#1D9E75;display:none;">Saved</span>
       </div>
       <div id="tx-notes-body" class="collapse-body">
+        <div id="panel-dates">${panelDatesHTML(tx)}</div>
         <div id="agreed-terms">${agreedTermsHTML(tx)}</div>
         <textarea id="tx-notes-textarea" style="width:100%;min-height:140px;font-size:13px;line-height:1.7;border:0.5px solid #c8c7c1;border-radius:8px;padding:10px;font-family:inherit;resize:vertical;" placeholder="Notes specific to this transaction — follow-ups, things to remember, anything you don't want to lose track of...">${esc(tx.notes||'')}</textarea>
       </div>
