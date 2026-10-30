@@ -1506,8 +1506,8 @@ function isWeekendDate(dateStr) {
   return day === 0 || day === 6;
 }
 
-/* US federal holidays for a year, as { 'YYYY-MM-DD': name }. Includes the
-   observed day when a fixed-date holiday falls on a weekend (Sat -> Fri, Sun -> Mon). */
+/* US federal holidays for a year, as { 'YYYY-MM-DD': name }. Actual dates only:
+   when a holiday falls on a weekend, the observed weekday is NOT treated as a holiday. */
 const _federalHolidayCache = {};
 function federalHolidays(year) {
   if (_federalHolidayCache[year]) return _federalHolidayCache[year];
@@ -1523,13 +1523,7 @@ function federalHolidays(year) {
     return iso(m, lastDate - ((lastDay - weekday + 7) % 7));
   };
   const h = {};
-  const fixed = (m, d, name) => {
-    const day = iso(m, d);
-    h[day] = name;
-    const wd = new Date(Date.UTC(year, m - 1, d)).getUTCDay();
-    if (wd === 6) h[addCalendarDays(day, -1)] = name + ' (observed)';
-    if (wd === 0) h[addCalendarDays(day, 1)] = name + ' (observed)';
-  };
+  const fixed = (m, d, name) => { h[iso(m, d)] = name; };
   fixed(1, 1, "New Year's Day");
   h[nthWeekday(1, 1, 3)] = 'Martin Luther King Jr. Day';
   h[nthWeekday(2, 1, 3)] = "Washington's Birthday";
@@ -1545,9 +1539,7 @@ function federalHolidays(year) {
   return h;
 }
 function holidayName(dateStr) {
-  const y = Number(dateStr.slice(0, 4));
-  // Next year's New Year's Day can be observed on Dec 31 of this year
-  return federalHolidays(y)[dateStr] || federalHolidays(y + 1)[dateStr] || '';
+  return federalHolidays(Number(dateStr.slice(0, 4)))[dateStr] || '';
 }
 function isBusinessDay(dateStr) { return !isWeekendDate(dateStr) && !holidayName(dateStr); }
 
