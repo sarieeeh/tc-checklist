@@ -383,6 +383,19 @@
   </div>
 </div>
 
+<div id="import-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:1.5rem;max-width:560px;width:92%;max-height:90vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px;">Import from Claude</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px;">Paste the JSON from the open-escrow skill. Only fields that have a value are filled in; everything else is left as it is.</div>
+    <textarea id="import-json" style="width:100%;min-height:200px;font-size:12px;font-family:monospace;border:0.5px solid #c8c7c1;border-radius:8px;padding:10px;resize:vertical;" placeholder='{ "side_hint": "buyer", "address": "...", ... }'></textarea>
+    <div id="import-result" style="font-size:13px;line-height:1.6;margin-top:10px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+      <button class="btn" onclick="closeImportModal()">Close</button>
+      <button class="btn primary" id="import-apply-btn" onclick="applyClaudeImport()">Import</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
 
 <div class="container">
@@ -1467,6 +1480,230 @@ function toggleCashOffer() {
   checkReminders();
 }
 
+/* ── IMPORT FROM CLAUDE (paste the open-escrow skill's JSON into the current transaction) ── */
+function openImportModal() {
+  if (!transactions[currentTxId]) { showToast('Open a transaction first.', 'error'); return; }
+  document.getElementById('import-json').value = '';
+  document.getElementById('import-result').innerHTML = '';
+  document.getElementById('import-apply-btn').style.display = '';
+  document.getElementById('import-modal-overlay').style.display = 'flex';
+  document.getElementById('import-json').focus();
+}
+function closeImportModal() {
+  document.getElementById('import-modal-overlay').style.display = 'none';
+}
+
+/* Add calendar days to a YYYY-MM-DD date. Returns '' if either input is missing. */
+function addCalendarDays(dateStr, days) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || '') || typeof days !== 'number' || !isFinite(days)) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.toISOString().slice(0, 10);
+}
+function isWeekendDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const day = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return day === 0 || day === 6;
+}
+
+/* US federal holidays for a year, as { 'YYYY-MM-DD': name }. Actual dates only:
+   when a holiday falls on a weekend, the observed weekday is NOT treated as a holiday. */
+const _federalHolidayCache = {};
+function federalHolidays(year) {
+  if (_federalHolidayCache[year]) return _federalHolidayCache[year];
+  const iso = (m, d) => new Date(Date.UTC(year, m - 1, d)).toISOString().slice(0, 10);
+  // nth weekday (0=Sun) of a month; n = -1 means the last one
+  const nthWeekday = (m, weekday, n) => {
+    if (n > 0) {
+      const first = new Date(Date.UTC(year, m - 1, 1)).getUTCDay();
+      return iso(m, 1 + ((weekday - first + 7) % 7) + (n - 1) * 7);
+    }
+    const lastDate = new Date(Date.UTC(year, m, 0)).getUTCDate();
+    const lastDay = new Date(Date.UTC(year, m - 1, lastDate)).getUTCDay();
+    return iso(m, lastDate - ((lastDay - weekday + 7) % 7));
+  };
+  const h = {};
+  const fixed = (m, d, name) => { h[iso(m, d)] = name; };
+  fixed(1, 1, "New Year's Day");
+  h[nthWeekday(1, 1, 3)] = 'Martin Luther King Jr. Day';
+  h[nthWeekday(2, 1, 3)] = "Washington's Birthday";
+  h[nthWeekday(5, 1, -1)] = 'Memorial Day';
+  fixed(6, 19, 'Juneteenth');
+  fixed(7, 4, 'Independence Day');
+  h[nthWeekday(9, 1, 1)] = 'Labor Day';
+  h[nthWeekday(10, 1, 2)] = 'Columbus Day';
+  fixed(11, 11, 'Veterans Day');
+  h[nthWeekday(11, 4, 4)] = 'Thanksgiving Day';
+  fixed(12, 25, 'Christmas Day');
+  _federalHolidayCache[year] = h;
+  return h;
+}
+function holidayName(dateStr) {
+  return federalHolidays(Number(dateStr.slice(0, 4)))[dateStr] || '';
+}
+function isBusinessDay(dateStr) { return !isWeekendDate(dateStr) && !holidayName(dateStr); }
+
+/* Count N business days after a date (the start date is day 0). */
+function addBusinessDays(dateStr, days) {
+  let dt = dateStr;
+  for (let i = 0; i < days; ) { dt = addCalendarDays(dt, 1); if (isBusinessDay(dt)) i++; }
+  return dt;
+}
+/* If a date is a weekend or federal holiday, move it to the next business day. */
+function rollToBusinessDay(dateStr) {
+  let dt = dateStr;
+  while (!isBusinessDay(dt)) dt = addCalendarDays(dt, 1);
+  return dt;
+}
+function whyNotBusinessDay(dateStr) {
+  return holidayName(dateStr) || (isWeekendDate(dateStr) ? 'a weekend' : '');
+}
+
+/* One agent object -> "Name, Brokerage, phone, email, DRE #" (skips empty parts) */
+function formatImportedAgent(a) {
+  if (!a) return '';
+  return [a.name, a.brokerage, a.phone, a.email, a.dre ? 'DRE ' + a.dre : ''].filter(Boolean).join(', ');
+}
+
+function applyClaudeImport() {
+  const tx = transactions[currentTxId];
+  const out = document.getElementById('import-result');
+  if (!tx) { closeImportModal(); return; }
+  let raw = document.getElementById('import-json').value.trim();
+  // Accept the whole Claude reply too: pull out the ```json block if there is one
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) raw = fence[1].trim();
+  let j;
+  try { j = JSON.parse(raw); }
+  catch (e) { out.innerHTML = '<div style="color:#A32D2D;">That is not valid JSON. Paste the code block from Claude exactly as it is.</div>'; return; }
+  if (!j || typeof j !== 'object' || Array.isArray(j)) { out.innerHTML = '<div style="color:#A32D2D;">Expected a JSON object.</div>'; return; }
+
+  const has = v => v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0);
+  const filled = [];
+  const notes = [];   // things the user should check by hand
+  const isBuyer = tx.type === 'buyer';
+
+  if (has(j.side_hint) && j.side_hint !== (isBuyer ? 'buyer' : 'listing')) {
+    notes.push(`The JSON says the ${j.side_hint} side, but this is a ${isBuyer ? 'buyer' : 'listing'} transaction. Buyer and seller fields were filled for this transaction's side.`);
+  }
+  if (has(j.address) && tx.address && j.address.trim().toLowerCase() !== tx.address.trim().toLowerCase()) {
+    notes.push(`Address in the JSON (${j.address}) differs from this transaction (${tx.address}). The address was not changed.`);
+  }
+
+  // Parties
+  const p = tx.parties || {};
+  const names = arr => Array.isArray(arr) ? arr.filter(Boolean).join(', ') : (arr || '');
+  const ourClients   = names(isBuyer ? j.buyers : j.sellers);
+  const otherClients = names(isBuyer ? j.sellers : j.buyers);
+  const ourAgent   = isBuyer ? j.buyer_agent : j.listing_agent;
+  const otherAgent = isBuyer ? j.listing_agent : j.buyer_agent;
+  const set = (key, val, label) => { if (has(val)) { p[key] = String(val); filled.push(label); } };
+  set('client', ourClients, isBuyer ? 'Buyer(s)' : 'Seller(s)');
+  set('otherClient', otherClients, isBuyer ? 'Seller(s)' : 'Buyer(s)');
+  set('agent', formatImportedAgent(ourAgent), isBuyer ? "Buyer's agent" : 'Listing agent');
+  set('otherAgent', formatImportedAgent(otherAgent), isBuyer ? 'Listing agent' : "Buyer's agent");
+  if (j.lender) set('lender', [j.lender.name, j.lender.company, j.lender.phone, j.lender.email].filter(Boolean).join(', '), 'Lender');
+  if (j.escrow) set('escrow', [j.escrow.officer, j.escrow.company, j.escrow.number ? 'Escrow #' + j.escrow.number : '', j.escrow.phone, j.escrow.email].filter(Boolean).join(', '), 'Escrow');
+  if (has(j.price) && isFinite(Number(j.price))) { p.price = '$' + Number(j.price).toLocaleString('en-US'); filled.push('Purchase price'); }
+  set('apn', j.apn, 'APN');
+  set('yearBuilt', j.year_built, 'Year built');
+  tx.parties = p;
+  if (p.client) tx.clientName = p.client;
+
+  // Cash / waived contingencies
+  if (!tx.waived) tx.waived = {};
+  if (j.all_cash === true) {
+    tx.cashOffer = true; tx.waived.loan = true; tx.waived.appraisal = true; filled.push('Cash offer');
+  } else if (j.all_cash === false) {
+    tx.cashOffer = false;
+  }
+  if (j.appraisal_contingency_removed === true) { tx.waived.appraisal = true; filled.push('Appraisal waived'); }
+  if (j.loan_contingency_removed === true)      { tx.waived.loan = true;      filled.push('Loan waived'); }
+
+  // Dates: each contingency = acceptance + N calendar days.
+  const prevDates = { ...(tx.dates || {}) };
+  const dates = { ...(tx.dates || {}) };
+  const acc = /^\d{4}-\d{2}-\d{2}$/.test(j.acceptance_date || '') ? j.acceptance_date : '';
+  if (acc) { dates.acceptance = acc; filled.push('Acceptance'); }
+  const dayFields = [
+    ['emd', 'emd_days', 'EMD'],
+    ['seller_disclosures', 'seller_disclosures_days', 'Seller disclosures'],
+    ['inspection', 'inspection_days', 'Inspection contingency'],
+    ['appraisal', 'appraisal_days', 'Appraisal contingency'],
+    ['loan', 'loan_days', 'Loan contingency'],
+    ['insurance', 'insurance_days', 'Insurance contingency'],
+    ['coe', 'coe_days', 'Close of escrow'],
+  ];
+  const blankDefaults = [];
+  dayFields.forEach(([key, field, label]) => {
+    if (tx.waived[key]) return;
+    const n = j[field];
+    if (key === 'coe' && /^\d{4}-\d{2}-\d{2}$/.test(j.coe_date || '')) {
+      // A COE written as a date is used as written
+      dates.coe = j.coe_date; filled.push('Close of escrow');
+      if (!isBusinessDay(j.coe_date)) notes.push(`Close of escrow is written as ${fmtDate(j.coe_date)}, which is ${whyNotBusinessDay(j.coe_date)}. It was not moved.`);
+      return;
+    }
+    if (typeof n === 'number') {
+      if (!acc) { notes.push(`${label}: ${n} days, but there is no acceptance date, so no date was set.`); return; }
+      // Acceptance is day 0
+      if (key === 'emd') {
+        // EMD counts business days (skips weekends and federal holidays)
+        dates.emd = addBusinessDays(acc, n); filled.push(`EMD (${n} business days)`);
+        return;
+      }
+      // Everything else counts calendar days; a last day on a weekend or federal holiday moves to the next business day
+      const raw = addCalendarDays(acc, n);
+      const dt = rollToBusinessDay(raw);
+      dates[key] = dt; filled.push(`${label} (${n} days)`);
+      if (dt !== raw) notes.push(`${label}: day ${n} is ${fmtDate(raw)} (${whyNotBusinessDay(raw)}), so it moved to ${fmtDate(dt)}.`);
+    } else if (field !== 'coe_days' || !has(j.coe_date)) {
+      blankDefaults.push(label);
+    }
+  });
+  if (blankDefaults.length) notes.push(`No day count in the JSON (contract default applies), so these dates were not set: ${blankDefaults.join(', ')}.`);
+  // Possession: a date is used as written; "N days after COE" counts plain calendar days from COE (no moving)
+  const poss = typeof j.possession === 'string' ? j.possession.trim() : '';
+  let possDone = false;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(poss)) { dates.possession = poss; possDone = true; }
+  else if (poss && dates.coe) {
+    const m = poss.match(/(\d+)\s*(?:calendar\s*)?days?\s*(?:after|following|from)\s*(?:the\s*)?(?:coe|close)/i) || poss.match(/(?:coe|close of escrow)\s*\+\s*(\d+)/i);
+    if (m) { dates.possession = addCalendarDays(dates.coe, Number(m[1])); possDone = true; }
+    else if (/^(?:at|upon|on)\s+(?:coe|close)/i.test(poss) || /^coe$/i.test(poss)) { dates.possession = dates.coe; possDone = true; }
+  }
+  if (possDone) filled.push('Possession');
+  tx.dates = dates;
+  clearDoneOnChangedDates(tx, prevDates, tx.dates);
+
+  // Everything else goes into this transaction's notes so nothing is lost
+  const block = [];
+  if (has(j.title_company)) block.push('Title: ' + j.title_company);
+  if (has(j.loan_type) || has(j.loan_amount)) block.push('Loan: ' + [j.loan_type, has(j.loan_amount) ? '$' + Number(j.loan_amount).toLocaleString('en-US') : ''].filter(Boolean).join(', '));
+  if (has(j.emd_amount)) block.push('EMD amount: $' + Number(j.emd_amount).toLocaleString('en-US'));
+  if (poss && !/^\d{4}-\d{2}-\d{2}$/.test(poss)) block.push('Possession: ' + poss);
+  if (Array.isArray(j.other_terms) && j.other_terms.length) block.push('Other terms:\n' + j.other_terms.map(t => '- ' + t).join('\n'));
+  if (Array.isArray(j.warnings) && j.warnings.length) block.push("Claude's warnings:\n" + j.warnings.map(t => '- ' + t).join('\n'));
+  if (block.length) {
+    const stamp = new Date().toLocaleDateString('en-US');
+    tx.notes = (tx.notes ? tx.notes.replace(/\s+$/, '') + '\n\n' : '') + `Imported from Claude (${stamp})\n` + block.join('\n');
+    filled.push('Notes (terms and warnings)');
+  }
+
+  saveTx();
+  rebuildSelect();
+  renderChecklist();
+  checkReminders();
+  renderKeyDatesBar();
+
+  const claudeWarnings = Array.isArray(j.warnings) ? j.warnings : [];
+  out.innerHTML =
+    `<div style="color:#085041;margin-bottom:6px;"><strong>Filled:</strong> ${filled.length ? esc(filled.join(', ')) : 'nothing (every field was empty)'}</div>` +
+    (notes.length ? `<div style="color:#854F0B;"><strong>Check:</strong><ul style="margin:4px 0 6px 18px;padding:0;">${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : '') +
+    (claudeWarnings.length ? `<div style="color:#854F0B;"><strong>Claude's warnings:</strong><ul style="margin:4px 0 0 18px;padding:0;">${claudeWarnings.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : '');
+  document.getElementById('import-apply-btn').style.display = 'none';
+  showToast('Imported from Claude. Review the details before relying on the dates.', 'success');
+}
+
 /* ── COMPLETED DEADLINES (click a chip in the key dates bar to mark it handled) ── */
 function isDateDone(tx, key) { return !!(tx && tx.doneDates && tx.doneDates[key]); }
 function toggleDateDone(key) {
@@ -1809,6 +2046,7 @@ function renderChecklist() {
             <label style="font-size:12px;color:#666;margin:0;">Agent:</label>
             <select id="d-agent-assign" style="height:28px;font-size:12px;width:auto;min-width:140px;" onchange="autoSaveAgent()"></select>
           </div>
+          <button class="btn sm" onclick="openImportModal()">Import from Claude</button>
           <button class="btn sm primary" onclick="saveTxDetails()">Save details</button>
         </div>
       </div>
@@ -1834,6 +2072,7 @@ function renderChecklist() {
             <option value="1" ${tx.cashOffer?'selected':''}>Cash offer</option>
           </select>
         </div>
+        <div class="date-field"><label>APN</label><input type="text" id="d-apn" value="${esc(p.apn||'')}" placeholder="1234-567-890" oninput="autoSaveDetails()" /></div>
         <div class="date-field"><label>Year built</label><input type="text" id="d-year-built" value="${esc(p.yearBuilt||'')}" placeholder="1965" inputmode="numeric" maxlength="4" oninput="autoSaveDetails()" /></div>
       </div>
       <div class="details-subhead">Key dates</div>
@@ -2132,6 +2371,7 @@ function autoSaveDetails() {
     escrow:      get('d-escrow'),
     price:       rawPrice ? '$' + Number(rawPrice).toLocaleString('en-US') : '',
     yearBuilt:   get('d-year-built'),
+    apn:         get('d-apn'),
   };
   const prevDates = { ...(tx.dates || {}) };
   tx.dates = {
@@ -2191,6 +2431,7 @@ function saveTxDetails() {
     escrow:      document.getElementById('d-escrow')?.value.trim() || '',
     price:       rawPriceSave ? '$' + Number(rawPriceSave).toLocaleString('en-US') : '',
     yearBuilt:   document.getElementById('d-year-built')?.value.trim() || '',
+    apn:         document.getElementById('d-apn')?.value.trim() || '',
   };
   const dates = {
     acceptance: document.getElementById('d-acceptance').value,
