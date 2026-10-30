@@ -274,6 +274,16 @@
     .terms-x:hover { color: #A32D2D; }
     @media (max-width: 560px) { .terms-row { grid-template-columns: 1fr; gap: 0; } }
 
+    /* NOTES PANEL: on wide screens, Notes & reminders sits in a fixed panel on the right
+       so it stays in view while scrolling the checklist. Narrower screens keep it inline. */
+    @media (min-width: 1200px) {
+      body.notes-panel-on .container { max-width: calc(760px + 400px); padding-right: 400px; }
+      body.notes-panel-on .notes-panel { position: fixed; top: 16px; right: 16px; width: 368px; max-height: calc(100vh - 32px); margin: 0; overflow-y: auto; z-index: 400; box-shadow: 0 3px 14px rgba(0,0,0,0.06); }
+      body.notes-panel-on .notes-panel #tx-notes-textarea { min-height: 240px; }
+      body.notes-panel-on .notes-panel .terms-row { grid-template-columns: 120px 1fr; }
+      body.notes-panel-on #toast-container { right: 408px !important; }
+    }
+
     /* KEY DATES BAR (pinned per-transaction) */
     .key-dates-bar { position: sticky; top: 8px; z-index: 500; background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; padding: 10px 14px; margin-bottom: 1rem; box-shadow: 0 3px 14px rgba(0,0,0,0.08); display: none; }
     .key-dates-bar.show { display: block; }
@@ -1275,6 +1285,7 @@ function loadTransaction(id) {
     document.getElementById('empty-state').style.display = 'block';
     document.getElementById('checklist-content').style.display = 'none';
     renderKeyDatesBar();
+    updateNotesPanel();
     return;
   }
   currentTxId = id;
@@ -1935,6 +1946,52 @@ function refreshAgreedTerms() {
   const tx = transactions[currentTxId];
   const el = document.getElementById('agreed-terms');
   if (tx && el) el.innerHTML = agreedTermsHTML(tx);
+  const dl = document.getElementById('panel-dates');
+  if (tx && dl) dl.innerHTML = panelDatesHTML(tx);
+}
+
+/* ── DATES & DEADLINES (copy-ready list in the notes panel; Key dates stays the place to edit) ── */
+const PANEL_DATE_LABELS = {
+  acceptance: 'Acceptance date', emd: 'Earnest Money Deposit', seller_disclosures: 'Seller Disclosures',
+  inspection: 'Inspection Contingency', insurance: 'Insurance Contingency', appraisal: 'Appraisal Contingency',
+  loan: 'Loan Contingency', coe: 'Close of Escrow', possession: 'Possession',
+};
+function fmtSlashDate(val) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(val || '');
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : '';
+}
+/* "Label: MM/DD/YYYY" per line; blank dates are left out, waived ones say Waived */
+function panelDatesLines(tx) {
+  const d = tx.dates || {};
+  const lines = [];
+  allDateDefs().forEach(def => {
+    const label = PANEL_DATE_LABELS[def.key] || def.label;
+    if (WAIVABLE_KEYS.includes(def.key) && isWaived(tx, def.key)) { lines.push(label + ': Waived'); return; }
+    const v = fmtSlashDate(d[def.key]);
+    if (v) lines.push(label + ': ' + v);
+  });
+  return lines;
+}
+function panelDatesHTML(tx) {
+  const lines = panelDatesLines(tx);
+  return `<div class="terms-card">
+    <div class="terms-head">
+      <div class="terms-title">Dates & deadlines</div>
+      ${lines.length ? '<button class="btn sm" onclick="copyPanelDates()">⧉ Copy</button>' : ''}
+    </div>
+    ${lines.length
+      ? `<div style="font-size:13px;line-height:1.7;white-space:pre-line;user-select:text;">${esc(lines.join('\n'))}</div>`
+      : '<div style="font-size:12px;color:#aaa;">No dates yet. Enter them in Key dates.</div>'}
+  </div>`;
+}
+function copyPanelDates() {
+  const tx = currentTxId ? transactions[currentTxId] : null;
+  if (!tx) return;
+  const text = panelDatesLines(tx).join('\n');
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('Dates copied, ready to paste.', 'success'), () => fallbackCopy(text));
+  } else fallbackCopy(text);
 }
 function addAgreedTerm() {
   const tx = transactions[currentTxId];
@@ -2316,6 +2373,14 @@ function showView(v) {
   if (v === 'reminders') renderRemindersView();
   if (v === 'notes')     renderNotes();
   if (v === 'settings')  renderSettings();
+  updateNotesPanel();
+}
+
+/* The right-side notes panel is on only while a transaction's checklist is showing */
+function updateNotesPanel() {
+  const content = document.getElementById('checklist-content');
+  const on = currentView === 'checklist' && !!currentTxId && content && content.style.display !== 'none' && !!content.querySelector('.notes-panel');
+  document.body.classList.toggle('notes-panel-on', on);
 }
 
 /* ── CHECKLIST ── */
@@ -2433,7 +2498,7 @@ function renderChecklist() {
       </div>
     </div>
 
-    <div class="dates-card no-print">
+    <div class="dates-card no-print notes-panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="dates-title">Notes & reminders for this transaction</div>
@@ -2442,6 +2507,7 @@ function renderChecklist() {
         <span id="tx-notes-saved-msg" style="font-size:12px;color:#1D9E75;display:none;">Saved</span>
       </div>
       <div id="tx-notes-body" class="collapse-body">
+        <div id="panel-dates">${panelDatesHTML(tx)}</div>
         <div id="agreed-terms">${agreedTermsHTML(tx)}</div>
         <textarea id="tx-notes-textarea" style="width:100%;min-height:140px;font-size:13px;line-height:1.7;border:0.5px solid #c8c7c1;border-radius:8px;padding:10px;font-family:inherit;resize:vertical;" placeholder="Notes specific to this transaction — follow-ups, things to remember, anything you don't want to lose track of...">${esc(tx.notes||'')}</textarea>
       </div>
@@ -2516,6 +2582,7 @@ function renderChecklist() {
   // Restore collapsed state for sections that were previously hidden
   applyCollapsedState('details-body', 'details-toggle');
   applyCollapsedState('rem-timing-body', 'rem-timing-toggle');
+  updateNotesPanel();
 
   // Wire up auto-save for per-transaction notes
   const notesTa = document.getElementById('tx-notes-textarea');
