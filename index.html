@@ -109,10 +109,11 @@
     .dates-title { font-size: 13px; font-weight: 500; color: #1a1a1a; }
     .details-subhead { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #888; margin: 1.25rem 0 0; }
     .dates-list { display: flex; flex-direction: column; margin-top: 0.5rem; max-width: 520px; }
-    .date-row { display: grid; grid-template-columns: 1fr auto 160px; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 0.5px solid #ededea; }
+    .date-row { display: grid; grid-template-columns: 1fr auto 76px 160px; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 0.5px solid #ededea; }
     .date-row:last-child { border-bottom: none; }
     .date-row > label:first-child { font-size: 13px; color: #1a1a1a; }
     .date-row input[type="date"] { height: 32px; font-size: 13px; }
+    .date-row input.day-count { height: 32px; font-size: 13px; text-align: right; padding: 0 6px; }
 
     /* EMAILS VIEW */
     .email-card { background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
@@ -323,7 +324,7 @@
     @media (max-width: 540px) {
       .tx-row, .field-row { flex-direction: column; }
       .dates-grid { grid-template-columns: 1fr; }
-      .date-row { grid-template-columns: 1fr auto 140px; gap: 8px; }
+      .date-row { grid-template-columns: 1fr auto 60px 130px; gap: 8px; }
     }
   </style>
 </head>
@@ -1559,6 +1560,90 @@ function whyNotBusinessDay(dateStr) {
   return holidayName(dateStr) || (isWeekendDate(dateStr) ? 'a weekend' : '');
 }
 
+/* ── DAY COUNTS IN KEY DATES ──
+   Each date row has a "days" box. Typing N fills the date from acceptance (day 0):
+   EMD counts business days; possession counts plain calendar days after COE (no moving);
+   everything else counts calendar days and a last day on a weekend or federal holiday
+   moves to the next business day. Counts are saved in tx.dayCounts so changing
+   acceptance (or COE, for possession) recalculates. Typing a date by hand clears that row's count. */
+function dateFromDayCount(key, startDate, n) {
+  if (key === 'emd') return addBusinessDays(startDate, n);
+  if (key === 'possession') return addCalendarDays(startDate, n);
+  return rollToBusinessDay(addCalendarDays(startDate, n));
+}
+function keyDateRow(tx, key, label) {
+  const d = tx.dates || {};
+  const n = (tx.dayCounts || {})[key];
+  const waivable = WAIVABLE_KEYS.includes(key);
+  const waived = waivable && isWaived(tx, key);
+  const off = waived ? 'disabled style="opacity:0.5;"' : '';
+  const middle = waivable
+    ? `<label class="waive-check"><input type="checkbox" id="d-${key}-waived" ${waived?'checked':''} onchange="toggleWaived('${key}')" /> Waived</label>`
+    : '<span></span>';
+  const hint = key === 'emd' ? 'Business days after acceptance'
+    : key === 'possession' ? 'Days after close of escrow'
+    : 'Days after acceptance';
+  return `<div class="date-row"><label for="d-${key}">${label}</label>${middle}` +
+    `<input type="number" class="day-count" id="dd-${key}" min="0" step="1" inputmode="numeric" placeholder="${key === 'possession' ? '+COE' : '#'}" title="${hint}" aria-label="${hint}" value="${typeof n === 'number' ? n : ''}" ${off} onchange="onDayCountInput('${key}')" />` +
+    `<input type="date" id="d-${key}" value="${d[key]||''}" ${off} onchange="onKeyDateTyped('${key}')" /></div>`;
+}
+/* Fill one row's date from its count. Returns a note if the date moved, or if there is no start date. */
+function fillDateFromCount(tx, key) {
+  const n = (tx.dayCounts || {})[key];
+  const dateEl = document.getElementById('d-' + key);
+  if (typeof n !== 'number' || !dateEl || dateEl.disabled) return '';
+  const from = key === 'possession' ? 'd-coe' : 'd-acceptance';
+  const start = document.getElementById(from)?.value || '';
+  if (!start) return key === 'possession' ? 'Enter close of escrow first.' : 'Enter the acceptance date first.';
+  const dt = dateFromDayCount(key, start, n);
+  dateEl.value = dt;
+  if (key !== 'emd' && key !== 'possession') {
+    const raw = addCalendarDays(start, n);
+    if (raw !== dt) return `Day ${n} is ${fmtDate(raw)} (${whyNotBusinessDay(raw)}), so it moved to ${fmtDate(dt)}.`;
+  }
+  return '';
+}
+function onDayCountInput(key) {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  if (!tx.dayCounts) tx.dayCounts = {};
+  const el = document.getElementById('dd-' + key);
+  const raw = (el?.value || '').trim();
+  const n = Number(raw);
+  if (raw === '' || !Number.isInteger(n) || n < 0) {
+    delete tx.dayCounts[key];
+    if (el && raw !== '') el.value = '';
+    autoSaveDetails();
+    return;
+  }
+  tx.dayCounts[key] = n;
+  const note = fillDateFromCount(tx, key);
+  if (key === 'coe') fillDateFromCount(tx, 'possession');
+  autoSaveDetails();
+  if (note) showToast(note, 'success');
+}
+/* Acceptance changed: recalculate every row that has a count. */
+function onDayCountAnchorChange() {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  const keys = Object.keys(tx.dayCounts || {}).filter(k => k !== 'possession');
+  keys.forEach(k => fillDateFromCount(tx, k));
+  if (keys.includes('coe')) fillDateFromCount(tx, 'possession');
+  autoSaveDetails();
+}
+/* A date typed by hand wins over the count, so the count is cleared. */
+function onKeyDateTyped(key) {
+  const tx = transactions[currentTxId];
+  if (!tx) return;
+  if (tx.dayCounts && key in tx.dayCounts) {
+    delete tx.dayCounts[key];
+    const el = document.getElementById('dd-' + key);
+    if (el) el.value = '';
+  }
+  if (key === 'coe') fillDateFromCount(tx, 'possession');
+  autoSaveDetails();
+}
+
 /* One agent object -> "Name, Brokerage, phone, email, DRE #" (skips empty parts) */
 function formatImportedAgent(a) {
   if (!a) return '';
@@ -1641,12 +1726,15 @@ function applyClaudeImport() {
     if (key === 'coe' && /^\d{4}-\d{2}-\d{2}$/.test(j.coe_date || '')) {
       // A COE written as a date is used as written
       dates.coe = j.coe_date; filled.push('Close of escrow');
+      if (tx.dayCounts) delete tx.dayCounts.coe;
       if (!isBusinessDay(j.coe_date)) notes.push(`Close of escrow is written as ${fmtDate(j.coe_date)}, which is ${whyNotBusinessDay(j.coe_date)}. It was not moved.`);
       return;
     }
     if (typeof n === 'number') {
       if (!acc) { notes.push(`${label}: ${n} days, but there is no acceptance date, so no date was set.`); return; }
       // Acceptance is day 0
+      if (!tx.dayCounts) tx.dayCounts = {};
+      tx.dayCounts[key] = n; // kept so the days box shows it and acceptance changes recalculate
       if (key === 'emd') {
         // EMD counts business days (skips weekends and federal holidays)
         dates.emd = addBusinessDays(acc, n); filled.push(`EMD (${n} business days)`);
@@ -1665,10 +1753,10 @@ function applyClaudeImport() {
   // Possession: a date is used as written; "N days after COE" counts plain calendar days from COE (no moving)
   const poss = typeof j.possession === 'string' ? j.possession.trim() : '';
   let possDone = false;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(poss)) { dates.possession = poss; possDone = true; }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(poss)) { dates.possession = poss; possDone = true; if (tx.dayCounts) delete tx.dayCounts.possession; }
   else if (poss && dates.coe) {
     const m = poss.match(/(\d+)\s*(?:calendar\s*)?days?\s*(?:after|following|from)\s*(?:the\s*)?(?:coe|close)/i) || poss.match(/(?:coe|close of escrow)\s*\+\s*(\d+)/i);
-    if (m) { dates.possession = addCalendarDays(dates.coe, Number(m[1])); possDone = true; }
+    if (m) { dates.possession = addCalendarDays(dates.coe, Number(m[1])); possDone = true; (tx.dayCounts = tx.dayCounts || {}).possession = Number(m[1]); }
     else if (/^(?:at|upon|on)\s+(?:coe|close)/i.test(poss) || /^coe$/i.test(poss)) { dates.possession = dates.coe; possDone = true; }
   }
   if (possDone) filled.push('Possession');
@@ -2077,16 +2165,16 @@ function renderChecklist() {
       </div>
       <div class="details-subhead">Key dates</div>
       <div class="dates-list">
-        <div class="date-row"><label for="d-acceptance">Acceptance</label><span></span><input type="date" id="d-acceptance" value="${d.acceptance||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-emd">EMD date</label><span></span><input type="date" id="d-emd" value="${d.emd||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-seller_disclosures">Seller disclosures</label><span></span><input type="date" id="d-seller_disclosures" value="${d.seller_disclosures||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-inspection">Inspection contingency</label><span></span><input type="date" id="d-inspection" value="${d.inspection||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-insurance">Insurance contingency</label><span></span><input type="date" id="d-insurance" value="${d.insurance||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-appraisal">Appraisal contingency</label><label class="waive-check"><input type="checkbox" id="d-appraisal-waived" ${isWaived(tx,'appraisal')?'checked':''} onchange="toggleWaived('appraisal')" /> Waived</label><input type="date" id="d-appraisal" value="${d.appraisal||''}" ${isWaived(tx,'appraisal')?'disabled style="opacity:0.5;"':''} onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-loan">Loan contingency</label><label class="waive-check"><input type="checkbox" id="d-loan-waived" ${isWaived(tx,'loan')?'checked':''} onchange="toggleWaived('loan')" /> Waived</label><input type="date" id="d-loan" value="${d.loan||''}" ${isWaived(tx,'loan')?'disabled style="opacity:0.5;"':''} onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-coe">Close of escrow</label><span></span><input type="date" id="d-coe" value="${d.coe||''}" onchange="autoSaveDetails()" /></div>
-        <div class="date-row"><label for="d-possession">Possession</label><span></span><input type="date" id="d-possession" value="${d.possession||''}" onchange="autoSaveDetails()" /></div>
-        ${customContingencies.map(c => `<div class="date-row"><label for="d-${c.id}">${esc(c.label)}</label><span></span><input type="date" id="d-${c.id}" value="${d[c.id]||''}" onchange="autoSaveDetails()" /></div>`).join('')}
+        <div class="date-row"><label for="d-acceptance">Acceptance</label><span></span><span style="font-size:11px;color:#888;text-align:right;">days</span><input type="date" id="d-acceptance" value="${d.acceptance||''}" onchange="onDayCountAnchorChange()" /></div>
+        ${keyDateRow(tx, 'emd', 'EMD date')}
+        ${keyDateRow(tx, 'seller_disclosures', 'Seller disclosures')}
+        ${keyDateRow(tx, 'inspection', 'Inspection contingency')}
+        ${keyDateRow(tx, 'insurance', 'Insurance contingency')}
+        ${keyDateRow(tx, 'appraisal', 'Appraisal contingency')}
+        ${keyDateRow(tx, 'loan', 'Loan contingency')}
+        ${keyDateRow(tx, 'coe', 'Close of escrow')}
+        ${keyDateRow(tx, 'possession', 'Possession')}
+        ${customContingencies.map(c => keyDateRow(tx, c.id, esc(c.label))).join('')}
       </div>
       </div><!-- /details-body -->
       <div style="border-top:0.5px solid #ededea;margin-top:1rem;padding-top:1rem;">
