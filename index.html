@@ -274,6 +274,16 @@
     .terms-x:hover { color: #A32D2D; }
     @media (max-width: 560px) { .terms-row { grid-template-columns: 1fr; gap: 0; } }
 
+    /* NOTES PANEL: on wide screens, Notes & reminders sits in a fixed panel on the right
+       so it stays in view while scrolling the checklist. Narrower screens keep it inline. */
+    @media (min-width: 1200px) {
+      body.notes-panel-on .container { max-width: calc(760px + 400px); padding-right: 400px; }
+      body.notes-panel-on .notes-panel { position: fixed; top: 16px; right: 16px; width: 368px; max-height: calc(100vh - 32px); margin: 0; overflow-y: auto; z-index: 400; box-shadow: 0 3px 14px rgba(0,0,0,0.06); }
+      body.notes-panel-on .notes-panel #tx-notes-textarea { min-height: 240px; }
+      body.notes-panel-on .notes-panel .terms-row { grid-template-columns: 120px 1fr; }
+      body.notes-panel-on #toast-container { right: 408px !important; }
+    }
+
     /* KEY DATES BAR (pinned per-transaction) */
     .key-dates-bar { position: sticky; top: 8px; z-index: 500; background: #fff; border: 0.5px solid #dddcd6; border-radius: 12px; padding: 10px 14px; margin-bottom: 1rem; box-shadow: 0 3px 14px rgba(0,0,0,0.08); display: none; }
     .key-dates-bar.show { display: block; }
@@ -1275,6 +1285,7 @@ function loadTransaction(id) {
     document.getElementById('empty-state').style.display = 'block';
     document.getElementById('checklist-content').style.display = 'none';
     renderKeyDatesBar();
+    updateNotesPanel();
     return;
   }
   currentTxId = id;
@@ -2316,6 +2327,14 @@ function showView(v) {
   if (v === 'reminders') renderRemindersView();
   if (v === 'notes')     renderNotes();
   if (v === 'settings')  renderSettings();
+  updateNotesPanel();
+}
+
+/* The right-side notes panel is on only while a transaction's checklist is showing */
+function updateNotesPanel() {
+  const content = document.getElementById('checklist-content');
+  const on = currentView === 'checklist' && !!currentTxId && content && content.style.display !== 'none' && !!content.querySelector('.notes-panel');
+  document.body.classList.toggle('notes-panel-on', on);
 }
 
 /* ── CHECKLIST ── */
@@ -2433,7 +2452,7 @@ function renderChecklist() {
       </div>
     </div>
 
-    <div class="dates-card no-print">
+    <div class="dates-card no-print notes-panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="dates-title">Notes & reminders for this transaction</div>
@@ -2516,6 +2535,7 @@ function renderChecklist() {
   // Restore collapsed state for sections that were previously hidden
   applyCollapsedState('details-body', 'details-toggle');
   applyCollapsedState('rem-timing-body', 'rem-timing-toggle');
+  updateNotesPanel();
 
   // Wire up auto-save for per-transaction notes
   const notesTa = document.getElementById('tx-notes-textarea');
