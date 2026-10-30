@@ -1834,6 +1834,7 @@ function renderChecklist() {
             <option value="1" ${tx.cashOffer?'selected':''}>Cash offer</option>
           </select>
         </div>
+        <div class="date-field"><label>Year built</label><input type="text" id="d-year-built" value="${esc(p.yearBuilt||'')}" placeholder="1965" inputmode="numeric" maxlength="4" oninput="autoSaveDetails()" /></div>
       </div>
       <div class="details-subhead">Key dates</div>
       <div class="dates-list">
@@ -2130,6 +2131,7 @@ function autoSaveDetails() {
     lender:      get('d-lender'),
     escrow:      get('d-escrow'),
     price:       rawPrice ? '$' + Number(rawPrice).toLocaleString('en-US') : '',
+    yearBuilt:   get('d-year-built'),
   };
   const prevDates = { ...(tx.dates || {}) };
   tx.dates = {
@@ -2188,6 +2190,7 @@ function saveTxDetails() {
     lender:      document.getElementById('d-lender')?.value.trim() || '',
     escrow:      document.getElementById('d-escrow')?.value.trim() || '',
     price:       rawPriceSave ? '$' + Number(rawPriceSave).toLocaleString('en-US') : '',
+    yearBuilt:   document.getElementById('d-year-built')?.value.trim() || '',
   };
   const dates = {
     acceptance: document.getElementById('d-acceptance').value,
