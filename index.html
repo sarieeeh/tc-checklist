@@ -260,19 +260,13 @@
     .terms-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
     .terms-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
     .terms-meta { font-size: 11px; color: #999; }
-    .terms-group { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin: 10px 0 4px; }
-    .terms-row { display: grid; grid-template-columns: 170px 1fr; gap: 10px; font-size: 13px; line-height: 1.5; padding: 3px 0; border-bottom: 0.5px solid #eeede8; }
-    .terms-row:last-child { border-bottom: none; }
-    .terms-label { color: #666; }
-    .terms-value { color: #1a1a1a; }
-    .terms-src { font-size: 11px; color: #999; margin-left: 6px; white-space: nowrap; }
     .terms-list { margin: 0; padding: 0; list-style: none; }
     .terms-list li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.5; padding: 3px 0; border-bottom: 0.5px solid #eeede8; }
     .terms-list li:last-child { border-bottom: none; }
-    .terms-list li span { flex: 1; }
+    .terms-list li > span { flex: 1; }
+    .terms-key { color: #666; }
     .terms-x { background: none; border: none; cursor: pointer; color: #bbb; font-size: 14px; line-height: 1; padding: 2px 4px; }
     .terms-x:hover { color: #A32D2D; }
-    @media (max-width: 560px) { .terms-row { grid-template-columns: 1fr; gap: 0; } }
 
     /* NOTES PANEL: on wide screens, Notes & reminders sits in a fixed panel on the right
        so it stays in view while scrolling the checklist. Narrower screens keep it inline. */
@@ -280,7 +274,6 @@
       body.notes-panel-on .container { max-width: calc(760px + 400px); padding-right: 400px; }
       body.notes-panel-on .notes-panel { position: fixed; top: 16px; right: 16px; width: 368px; max-height: calc(100vh - 32px); margin: 0; overflow-y: auto; z-index: 400; box-shadow: 0 3px 14px rgba(0,0,0,0.06); }
       body.notes-panel-on .notes-panel #tx-notes-textarea { min-height: 240px; }
-      body.notes-panel-on .notes-panel .terms-row { grid-template-columns: 120px 1fr; }
       body.notes-panel-on #toast-container { right: 408px !important; }
     }
 
@@ -1862,81 +1855,39 @@ function applyClaudeImport() {
   showToast('Imported from Claude. Review the details before relying on the dates.', 'success');
 }
 
-/* ── AGREED TERMS (RPA and counters, shown in Notes & reminders) ──
-   Prices, dates and day counts are read live from the transaction, so edits made in
-   Details or Key dates show here too. tx.agreedTerms only holds what has no other home. */
+/* ── OTHER AGREED TERMS (RPA and counters, shown in Notes & reminders) ──
+   Only terms that are not already in Transaction details. tx.agreedTerms still keeps
+   the import's day-count defaults and sources, but they are not shown here. */
 const LEGACY_IMPORT_HEADER = /^Imported from Claude \([^)]*\)\s*$/;
 
 function agreedTermsHTML(tx) {
   const t = tx.agreedTerms;
   const hasLegacy = (tx.notes || '').split('\n').some(l => LEGACY_IMPORT_HEADER.test(l));
   const tidyBtn = hasLegacy
-    ? `<div style="font-size:12px;color:#666;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">The notes below still have contract terms from an older import.<button class="btn sm" onclick="tidyImportedNotes()">Move them into Agreed terms</button></div>`
+    ? `<div style="font-size:12px;color:#666;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">The notes below still have contract terms from an older import.<button class="btn sm" onclick="tidyImportedNotes()">Move them into Other agreed terms</button></div>`
     : '';
   if (!t) return tidyBtn;
 
-  const dates = tx.dates || {}, counts = tx.dayCounts || {}, waived = tx.waived || {};
-  const src = t.sources || {};
-  const defaults = t.defaults || [];
-  const row = (label, value, srcKeys) => {
-    if (!value) return '';
-    const s = (srcKeys || []).map(k => src[k]).filter(Boolean);
-    const tag = s.length ? `<span class="terms-src">${esc([...new Set(s)].join('; '))}</span>` : '';
-    return `<div class="terms-row"><div class="terms-label">${esc(label)}</div><div class="terms-value">${esc(value)}${tag}</div></div>`;
-  };
-  // "17 days (November 12, 2026)", "Waived", "RPA default", or just the date if typed by hand
-  const period = (key, unit) => {
-    if (waived[key]) return 'Waived';
-    if (typeof counts[key] === 'number') return `${counts[key]} ${unit} (${fmtDate(dates[key])})`;
-    if (dates[key]) return fmtDate(dates[key]);
-    if (defaults.includes(key)) return 'RPA default';
-    return '';
-  };
-  const group = (title, rows) => rows.join('') ? `<div class="terms-group">${title}</div>${rows.join('')}` : '';
-
-  let emdDue = '';
-  if (typeof counts.emd === 'number') emdDue = `due in ${counts.emd} business days (${fmtDate(dates.emd)})`;
-  else if (dates.emd) emdDue = 'due ' + fmtDate(dates.emd);
-  else if (defaults.includes('emd')) emdDue = 'due per RPA default';
-  const emdText = [t.emdAmount, emdDue].filter(Boolean).join(', ');
-  let possText = '';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(t.possession || '')) possText = fmtDate(dates.possession || t.possession);
-  else if (t.possession) possText = t.possession + (dates.possession ? ` (${fmtDate(dates.possession)})` : '');
-
-  const html =
-    group('Price and deposit', [
-      row('Purchase price', (tx.parties || {}).price, ['price']),
-      row('Earnest money', emdText.charAt(0).toUpperCase() + emdText.slice(1), ['emd_amount', 'emd_days']),
-    ]) +
-    group('Financing', [
-      row('Financing', tx.cashOffer ? 'All cash' : t.loan, ['all_cash', 'loan_type', 'loan_amount']),
-    ]) +
-    group('Contingencies', [
-      row('Seller disclosures', period('seller_disclosures', 'days'), ['seller_disclosures_days']),
-      row('Inspection', period('inspection', 'days'), ['inspection_days']),
-      row('Appraisal', period('appraisal', 'days'), ['appraisal_days', 'appraisal_contingency_removed']),
-      row('Loan', period('loan', 'days'), ['loan_days', 'loan_contingency_removed']),
-      row('Insurance', period('insurance', 'days'), ['insurance_days']),
-    ]) +
-    group('Closing', [
-      row('Close of escrow', period('coe', 'days'), ['coe_days', 'coe_date']),
-      row('Possession', possText, ['possession']),
-      row('Title company', t.title, ['title_company']),
-    ]);
-
+  // Price, financing type and every date already show in Transaction details, so they are
+  // left out here. Only terms with no other home are listed: EMD amount, loan details,
+  // title company, possession wording, and the other terms from the RPA and counters.
+  const facts = [];
+  if (t.emdAmount) facts.push(['EMD amount', t.emdAmount]);
+  if (t.loan && !tx.cashOffer) facts.push(['Loan', t.loan]);
+  if (t.title) facts.push(['Title', t.title]);
+  if (t.possession && !/^\d{4}-\d{2}-\d{2}$/.test(t.possession)) facts.push(['Possession', t.possession]);
+  const factsHTML = facts.map(([k, v]) => `<li><span><span class="terms-key">${esc(k)}:</span> ${esc(v)}</span></li>`).join('');
   const other = (t.otherTerms || []).map((term, i) =>
     `<li><span>${esc(term)}</span><button class="terms-x" title="Remove this term" onclick="removeAgreedTerm(${i})">&#x2715;</button></li>`).join('');
 
   return tidyBtn + `<div class="terms-card">
     <div class="terms-head">
-      <div class="terms-title">Agreed terms (RPA and counters)</div>
-      <div class="terms-meta">${t.importedAt ? 'Imported from Claude ' + esc(t.importedAt) + ' · ' : ''}<a href="#" onclick="clearAgreedTerms();return false;" style="color:#999;">Clear</a></div>
+      <div class="terms-title">Other agreed terms</div>
+      <div class="terms-meta">${t.importedAt ? 'Imported ' + esc(t.importedAt) + ' · ' : ''}<a href="#" onclick="clearAgreedTerms();return false;" style="color:#999;">Clear</a></div>
     </div>
-    ${html}
-    <div class="terms-group">Other agreed terms</div>
-    ${other ? `<ul class="terms-list">${other}</ul>` : '<div style="font-size:12px;color:#aaa;padding:3px 0;">None listed</div>'}
+    ${factsHTML || other ? `<ul class="terms-list">${factsHTML}${other}</ul>` : '<div style="font-size:12px;color:#aaa;padding:3px 0;">None listed</div>'}
     <div style="display:flex;gap:6px;margin-top:6px;">
-      <input id="agreed-term-input" placeholder="Add a term, e.g. Seller credit $5,000 toward closing costs" style="flex:1;height:30px;font-size:12px;" onkeydown="if(event.key==='Enter')addAgreedTerm()">
+      <input id="agreed-term-input" placeholder="Add a term, e.g. Seller credit $5,000" style="flex:1;height:28px;font-size:12px;" onkeydown="if(event.key==='Enter')addAgreedTerm()">
       <button class="btn sm" onclick="addAgreedTerm()">Add</button>
     </div>
   </div>`;
@@ -2015,7 +1966,7 @@ function removeAgreedTerm(i) {
 async function clearAgreedTerms() {
   const tx = transactions[currentTxId];
   if (!tx || !tx.agreedTerms) return;
-  if (!await appConfirm('Clear the Agreed terms card? Dates, price and parties stay as they are. Import from Claude again to bring it back.')) return;
+  if (!await appConfirm('Clear the Other agreed terms card? Dates, price and parties stay as they are. Import from Claude again to bring it back.')) return;
   delete tx.agreedTerms;
   saveTx();
   refreshAgreedTerms();
@@ -2027,7 +1978,7 @@ async function clearAgreedTerms() {
 async function tidyImportedNotes() {
   const tx = transactions[currentTxId];
   if (!tx) return;
-  if (!await appConfirm("Move the contract terms from older imports out of the notes box and into Agreed terms? Claude's warnings from those imports will be removed from the notes. Anything you typed yourself stays.")) return;
+  if (!await appConfirm("Move the contract terms from older imports out of the notes box and into Other agreed terms? Claude's warnings from those imports will be removed from the notes. Anything you typed yourself stays.")) return;
   const lines = (tx.notes || '').split('\n');
   const kept = [];
   const found = { otherTerms: [] };
@@ -2063,7 +2014,7 @@ async function tidyImportedNotes() {
   const ta = document.getElementById('tx-notes-textarea');
   if (ta) ta.value = tx.notes;
   refreshAgreedTerms();
-  showToast('Terms moved into Agreed terms.', 'success');
+  showToast('Terms moved into Other agreed terms.', 'success');
 }
 
 /* ── COMPLETED DEADLINES (click a chip in the key dates bar to mark it handled) ── */
