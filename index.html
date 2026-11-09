@@ -2400,8 +2400,10 @@ function renderChecklist() {
         <div class="date-field"><label>APN</label><input type="text" id="d-apn" value="${esc(p.apn||'')}" placeholder="1234-567-890" oninput="autoSaveDetails()" /></div>
         <div class="date-field"><label>Year built</label><input type="text" id="d-year-built" value="${esc(p.yearBuilt||'')}" placeholder="1965" inputmode="numeric" maxlength="4" oninput="autoSaveDetails()" /></div>
       </div>
-      <div class="details-subhead">Key dates</div>
-      <div class="dates-list">
+      <div class="details-subhead" style="display:flex;align-items:center;gap:8px;">Key dates
+        <button class="collapse-toggle" style="text-transform:none;letter-spacing:0;" onclick="toggleSection('key-dates-body','key-dates-toggle')" id="key-dates-toggle">▾ Hide</button>
+      </div>
+      <div class="dates-list collapse-body" id="key-dates-body">
         <div class="date-row"><label for="d-purchase_agreement">Purchase agreement</label><span></span><span></span><input type="date" id="d-purchase_agreement" value="${d.purchase_agreement||''}" onchange="autoSaveDetails()" /></div>
         <div class="date-row"><label for="d-acceptance">Acceptance</label><span></span><span style="font-size:11px;color:#888;text-align:right;">days</span><input type="date" id="d-acceptance" value="${d.acceptance||''}" onchange="onDayCountAnchorChange()" /></div>
         ${keyDateRow(tx, 'emd', 'EMD date')}
@@ -2537,6 +2539,7 @@ function renderChecklist() {
   }
   // Restore collapsed state for sections that were previously hidden
   applyCollapsedState('details-body', 'details-toggle');
+  applyCollapsedState('key-dates-body', 'key-dates-toggle');
   applyCollapsedState('rem-timing-body', 'rem-timing-toggle');
   updateNotesPanel();
 
